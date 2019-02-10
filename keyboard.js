@@ -15,7 +15,7 @@ const Keyboard = function() {
   	dx: 0,
   	dy: 0,
   };
-  const action = {};
+  const action = { down: false };
   function onKey(e) {
     switch(e.keyCode) {
       case KEY_LEFT: case KEY_RIGHT: case KEY_UP: case KEY_DOWN:

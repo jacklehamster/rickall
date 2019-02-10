@@ -12,13 +12,19 @@ const Engine = function(document, Game) {
 		'actions': {
 			type: 'actions',
 		},
+		'text': {
+			type: 'text',
+		},
+		'rect': {
+			type: 'rect',
+		},
 	};
 
 	function onNewScene(scene) {
 		sceneData = {};
 		scene.init.forEach(a => {
 			if (typeof(a) === 'function') {
-				a();
+				a(0);
 			} else {
 				evaluate(a, null);
 			}
@@ -417,7 +423,31 @@ const Engine = function(document, Game) {
 	function refresh() {
 		const now = new Date().getTime() - sceneTime;
 		renderScene(scene, now);
+//		applyEffect(now);
 		requestAnimationFrame(refresh);
+	}
+
+		// 	const imgData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+		// const data = imgData.data;
+		// for(let i=0; i<data.length; i+=4) {
+		// 	if(data[i].toString(16)=='ae') {
+		// 		data[i+1] = parseInt(0x3e);
+		// 	}
+		// }
+		// ctx.putImageData(imgData, 0, 0);
+
+
+	function applyEffect(fade, now) {
+		let ctx2 = ctx.canvas.getContext('2d', {alpha: false});
+		const { width, height } = ctx2.canvas;
+		const imgData = ctx2.getImageData(0, 0, width, height);
+		const data = imgData.data;
+		for (let i=0; i < data.length; i++) {
+			if(Math.random()< fade) {
+				data[i] = 0xFF;
+			}			
+		}
+		ctx2.putImageData(imgData, 0, 0);
 	}
 
 	function setDebug(div) {
@@ -468,12 +498,12 @@ const Engine = function(document, Game) {
 		if (scene.actions) {
 			scene.actions.forEach(a => {
 				if(typeof(a)==='function') 
-					a(); 
+					a(now); 
 				else 
 					evaluate(a, null);
 			});
 		}
-		const sprites = typeof(scene.sprites)==='function' ? scene.sprites() : scene.sprites;
+		const sprites = typeof(scene.sprites)==='function' ? scene.sprites(now) : scene.sprites;
 		const renderedSprites = getRendered(sprites);
 		renderedSprites.sort(compareSprites);
 		renderSprites(renderedSprites, 0, 0, now, {});
@@ -481,8 +511,11 @@ const Engine = function(document, Game) {
 	}
 
 	function compareSprites(sprite1, sprite2) {
-		const [ , , y1 ] = sprite1;
-		const [ , , y2 ] = sprite2;
+		const [ , , y1, option1 ] = sprite1;
+		const [ , , y2, option2 ] = sprite2;
+		if (option1.zOrder !== option2.zOrder) {
+			return (option1.zOrder||0) - (option2.zOrder||0);
+		}
 		return evaluate(y1, sprite1) - evaluate(y2, sprite2);
 	}
 
@@ -525,9 +558,63 @@ const Engine = function(document, Game) {
 							renderImage(sprite, definition, groupX + x, groupY + y, now, option || {});
 						}
 						break;
+					case 'text':
+						{
+							const [ , xFormula, yFormula, option ] = sprite;
+							const x = evaluate(xFormula, option);
+							const y = evaluate(yFormula, option);
+							renderText(sprite, definition, groupX + x, groupY + y, now, option || {});
+						}
+						break;
+					case 'rect':
+						{
+							const [ , xFormula, yFormula, option ] = sprite;
+							const x = evaluate(xFormula, option);
+							const y = evaluate(yFormula, option);
+							renderRect(sprite, definition, groupX + x, groupY + y, now, option || {});
+						}
+						break;
 				}
 			}
 		});
+	}
+
+	function renderRect(sprite, definition, x, y, now, option) {
+		const { width, height, color } = option;
+		ctx.fillStyle = evaluate(color, sprite) || 'black';
+		ctx.fillRect(x, y, width, height);
+	}
+
+	function renderText(sprite, definition, x, y, now, option) {
+		let text = evaluate(option.text);
+		if(option.talkTime) {
+			const dt = now - option.talkTime;
+			text = text.substr(0, Math.floor(dt / 50));
+		}
+		const { alpha, color, outline } = option;
+		if(text) {
+			ctx.translate(0.5, 0.5);
+			ctx.fillStyle = evaluate(color, sprite) || 'black';
+			if(option.alpha) {
+				ctx.globalAlpha = option.alpha;
+			}
+			const lines = text.split('\n');
+			for(let l=0; l<lines.length; l++) {
+				if (outline) {
+					ctx.fillStyle = evaluate(outline, sprite) || 'black';
+					ctx.fillText(lines[l], +0 + x, -1 + l*10 - (lines.length/2) * 10 + y);
+					ctx.fillText(lines[l], +0 + x, +1 + l*10 - (lines.length/2) * 10 + y);
+					ctx.fillText(lines[l], -1 + x, +0 + l*10 - (lines.length/2) * 10 + y);
+					ctx.fillText(lines[l], +1 + x, +0 + l*10 - (lines.length/2) * 10 + y);
+				}
+				ctx.fillStyle = evaluate(color, sprite) || 'black';
+				ctx.fillText(lines[l], x, l*10 - (lines.length/2) * 10 + y);
+			}
+			if(option.alpha) {
+				ctx.globalAlpha = 1;
+			}
+			ctx.translate(-0.5, -0.5);
+		}
 	}
 
 	function renderImage(sprite, definition, x, y, now, option) {
