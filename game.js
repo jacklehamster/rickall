@@ -42,7 +42,7 @@ const Game = function() {
 
 	const TIME = [
 		'monday', 'weekend', 'month', 'tuesday', 'wednesday', 'thursday', 'friday', 'time',
-		'week', 'year', 'Christmas', 'time with met',
+		'week', 'year', 'Christmas', 'time we met',
 	];
 
 	function makeCap(string) {
@@ -243,6 +243,7 @@ const Game = function() {
 				type: getRandom(['npc', 'pixie', 'mad', 'smart']),
 				gender: Math.random() < .5 ? 'penis' : 'vagina',
 				introduction: wrapText(randomIntroduction(index + randomMess)),
+				blocked: 0,
 			};
 		}
 	);
@@ -582,13 +583,15 @@ const Game = function() {
 
 			//	move
 			{
-				if(!talking)
+				if(!talking && !npc.shot)
 				{
 					const dx = hero.x - npc.x + (hero.face ? hero.face.dx * 15 : 0);
 					const dy = hero.y - npc.y;
 					const distHero = Math.sqrt(dx * dx + dy * dy);
 					if(distHero < 30) {
 						npcToTalk = npc;
+						npcToTalk.talking = 0;
+
 					}
 				}
 
@@ -597,16 +600,25 @@ const Game = function() {
 				if (dist) {
 					let realDx = npcSpeed * dx / dist;
 					let realDy = npcSpeed * dy / dist;
-					if (blocked(npc.x + realDx, npc.y + realDy, true)) {
-						if (!blocked(npc.x + realDx, npc.y - realDy, true)) {
-							realDy = -realDy;
-							npc.move.dy = -dy;
-						} else if(!blocked(npc.x - realDx, npc.y + realDy, true)) {
-							realDx = -realDx;
-							npc.move.dx = -dx;
-						} else {
-							npc.move.dx = -dx;
-							npc.move.dy = -dy;
+					if (npc.blocked < 1000) {
+						if (blocked(npc.x + realDx, npc.y + realDy, true)) {
+							if (!blocked(npc.x + realDx, npc.y - realDy, true)) {
+								realDy = -realDy;
+								npc.move.dy = -dy;
+								npc.blocked++;
+							} else if(!blocked(npc.x - realDx, npc.y + realDy, true)) {
+								realDx = -realDx;
+								npc.move.dx = -dx;
+								npc.blocked++;
+							} else {
+								npc.move.dx = -dx;
+								npc.move.dy = -dy;
+								npc.blocked++;
+							}
+						}
+					} else {
+						if (!blocked(npc.x + realDx, npc.y + realDy, true)) {
+							npc.blocked = false;
 						}
 					}
 
