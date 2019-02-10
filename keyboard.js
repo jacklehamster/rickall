@@ -10,6 +10,7 @@ const Keyboard = function() {
   const KEY_Q = 81;
   const KEY_E = 69;
   const KEY_SPACE = 32;
+  const KEY_ESCAPE = 27;
   const keyboard = [];
   let move = {
   	dx: 0,
@@ -27,6 +28,10 @@ const Keyboard = function() {
         break;
       case KEY_SPACE:
         action.down = e.type === 'keyup' ? 0 : 1;
+        e.preventDefault();
+        break;
+      case KEY_ESCAPE:
+        action.cancel = e.type === 'keyup' ? 0 : 1;
         e.preventDefault();
         break;
     }

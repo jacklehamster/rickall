@@ -642,7 +642,11 @@ const Engine = function(document, Game) {
 		const yy = Math.floor(y + oY);
 		const { canvas, flipCanvas } = img;
 		const shouldFlip = evaluate(option.flip, option);
-		ctx.drawImage(shouldFlip ? flipCanvas : canvas, xx, yy);
+		if(option.size) {
+			ctx.drawImage(shouldFlip ? flipCanvas : canvas, xx, yy, option.size[0], option.size[1]);
+		} else {
+			ctx.drawImage(shouldFlip ? flipCanvas : canvas, xx, yy);
+		}
 	}
 
 	function init() {

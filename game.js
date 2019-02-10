@@ -5,7 +5,60 @@ const Game = function() {
 	const TIME_FREEZE = false;//true;
 	const SPEECH_SPEED = 30;
 
-//	const 
+	const RANDOM_SYLLABLES = [
+		'jo', 'ja', 'ne', 'ka', 'vi', 'dof', 'lin', 'chu', 'rat', 'be', 'do', 'nald', 'tay', 'lor', 
+		'ric', 'ky', 'mor', 'ty', 'jer', 'ry', 'vin', 'cent',
+		'har', 'wubbalubbadubdub'
+	];
+
+	const randomMess = Math.floor(Math.random()*10000000);
+
+	const OCCUPATIONS = [
+		'dentist', 'friend', 'best friend', 'mistress',
+		'teacher', 'financial advisor', 'massage therapist',
+		'personal doormat', 'milkman', 'neighbor',
+		'cousin', 'brother', 'sister', "buddy", "favorite actor",
+		"number one fan", "first love",
+	];
+
+	const LOCATIONS = [
+		'at a bar', 'in the park', 'at school', 'at a party',
+		'at a barbecue', 'at work', "at Wendy's",
+		'at the airport', 'in the library', "in your dad's garage",
+		"at the Marriot", "at the police station", "at the convention center",
+		"on the airplane", "at the concert", "in the car",
+		"with your friends", "in front of everybody",
+	];
+
+	const HOBBY = [
+		'a beer', 'sex', 'sushi', 'tacos', 'a great time',
+		'an argument', 'a lot of fun', 'a long conversation',
+		'boardgames', 'a little chat', 'a fight', 'fish and chips',
+		'lasagna', 'pasta', 'Korean food', "a joint", "drugs",
+		"a sandwich", "ice cream", "tiramisu", "too much drinks",
+		"discovered something amazing", 'the Impossible Burger',
+		'fifty donuts',
+	];
+
+	const TIME = [
+		'monday', 'weekend', 'month', 'tuesday', 'wednesday', 'thursday', 'friday', 'time',
+		'week', 'year', 'Christmas', 'time with met',
+	];
+
+	function makeCap(string) {
+		return string.charAt(0).toUpperCase() + string.substr(1).toLowerCase();
+	}
+
+	function randomIntroduction(id) {
+		return "You don't recognize me? I am " 
+			+ makeCap(RANDOM_SYLLABLES[(id+12345)%RANDOM_SYLLABLES.length]
+			+ RANDOM_SYLLABLES[id%RANDOM_SYLLABLES.length])
+			+ " your "
+			+ OCCUPATIONS[(id+323)%OCCUPATIONS.length]
+			+ ". We had " + HOBBY[(id +3333)%HOBBY.length] + " last "
+			+ TIME[(id + 13131) % TIME.length] + " "
+			+ LOCATIONS[(id + 37)%LOCATIONS.length] + ".";
+	}
 
 
 	const HOT_TOPICS = {
@@ -18,6 +71,8 @@ const Game = function() {
 			"Remember that one time, at band camp?",
 			"I really love to say the same thing over and over.",
 			"Did you find a parasite yet?",
+			"There are so many people here.",
+			"I don't recognize half the people in this room.",
 		].map(wrapText),
 		"justKilled": [
 			"Who would have thought that was a parasite?",
@@ -128,11 +183,11 @@ const Game = function() {
 		const newSplit = [];
 		let length = 0;
 		for(let i=0; i<split.length; i++) {
-			length += split[i].length + 1;
-			if(length > STRING_LIMIT) {
+			if(length + split[i].length > STRING_LIMIT) {
 				newSplit.push('\n');
 				length = 0;
 			}
+			length += split[i].length + 1;
 			newSplit.push(split[i]);
 		}
 		return newSplit.join(" ").split("\n ").join("\n");
@@ -153,7 +208,7 @@ const Game = function() {
 	 };
 
 	const FACE_COLORS = [
-		{ name: 'default' },
+		{ name: 'default', 0xFFFFFF: 0xFFFFFF },
 		{ name: "pink", 0xFFFFFF: 0xFFEEEE },
 		{ name: "yellow", 0xFFFFFF: 0xFFFFCC },
 		{ name: "black", 0xFFFFFF: 0x994444, outline: 'white' },
@@ -187,6 +242,7 @@ const Game = function() {
 				face: move,
 				type: getRandom(['npc', 'pixie', 'mad', 'smart']),
 				gender: Math.random() < .5 ? 'penis' : 'vagina',
+				introduction: wrapText(randomIntroduction(index + randomMess)),
 			};
 		}
 	);
@@ -235,6 +291,8 @@ const Game = function() {
 	};
 
 	let timeFreeze = TIME_FREEZE;
+	let waitUp = false;;
+	let justPutGunDown = 0;
 
 	function performActions(now) {
 
@@ -261,6 +319,16 @@ const Game = function() {
 				const { dx, dy } = Keyboard.move;
 				hero.move.dx = dx;
 				hero.move.dy = dy;
+			}
+		} else {
+			if (!waitUp && Keyboard.move.dy) {
+				chatIndex = (chatIndex % 4 - Keyboard.move.dy + 4) % 4;
+				if(whoAreYou && chatIndex===1) {
+					chatIndex = (chatIndex % 4 - Keyboard.move.dy + 4) % 4;
+				}
+				waitUp = true;
+			} else if(!Keyboard.move.dy) {
+				waitUp = false;
 			}
 		}
 
@@ -292,7 +360,7 @@ const Game = function() {
 		occupy(hero.x, hero.y, false);
 		const dist = Math.sqrt(dx * dx + dy * dy);
 		if (dist) {
-			let heroSpeed = shooting(now) ? 0 :  SPEED * 2 * (hero.gun ? 2 : 1);
+			let heroSpeed = shooting(now) ? 0 :  SPEED * 2 * (hero.gun || now - justPutGunDown ? 2 : 1);
 			let realDx = heroSpeed * dx / dist;
 			let realDy = heroSpeed * dy / dist;
 			if (blocked(hero.x + realDx, hero.y + realDy)) {
@@ -339,10 +407,9 @@ const Game = function() {
 				}
 			} else {
 				if(npcToTalk) {
-					talking = talking ? 0 : now;
-					if(talking) {
-						// npcToTalk.move.dx = 0;
-						// npcToTalk.move.dy = 0;
+//					talking = talking ? 0 : now;
+					if(!talking) {
+						talking = now;
 						hero.move.dx = 0;
 						hero.move.dy = 0;
 						hero.face = {
@@ -351,16 +418,48 @@ const Game = function() {
 						npcToTalk.face = {
 							dx: hero.x < npcToTalk.x ? -1 : hero.x > npcToTalk.x ? 1 : 0, dy: 0,
 						};
+						chatIndex = 0;
+						whoAreYou = false;
 					} else {
-						npcToTalk.move.dx = Math.floor(Math.random() * 3) - 1;
-						npcToTalk.move.dy = Math.floor(Math.random() * 3) - 1;		
-						npcToTalk.face = npcToTalk.move;	
-						npcToTalk.talking = 0;		
+
+						switch(chatIndex) {
+							case 0: // GOODBYE
+							{
+								npcToTalk.move.dx = Math.floor(Math.random() * 3) - 1;
+								npcToTalk.move.dy = Math.floor(Math.random() * 3) - 1;		
+								npcToTalk.face = npcToTalk.move;	
+								talking = 0;		
+							}
+							break;
+							case 1: // WHO ARE YOU?
+							{
+								if (!whoAreYou) {
+									whoAreYou = true;
+									npcToTalk.talking = 0;
+									chatIndex = 0;
+								}
+							}
+							break;
+							case 3: // GUN
+							{
+								hero.gun = now;
+								npcToTalk.move.dx = Math.floor(Math.random() * 3) - 1;
+								npcToTalk.move.dy = Math.floor(Math.random() * 3) - 1;		
+								npcToTalk.face = npcToTalk.move;	
+								talking = 0;		
+							}
+							break;
+						}
 					}
 				}
 			}
 			alreadyPressed = true;
-		} else if(alreadyPressed && !Keyboard.action.down) {
+		} else if(!alreadyPressed && Keyboard.action.cancel) {
+			if(hero.gun) {
+				hero.gun = 0;
+				justPutGunDown = now;
+			}
+		} else if(alreadyPressed && !Keyboard.action.down && !Keyboard.action.cancel) {
 			alreadyPressed = false;
 		}
 
@@ -419,7 +518,7 @@ const Game = function() {
 					shotNpc = npc;
 					npc.shot = true;
 					lastShot.target = npc;
-					timeFreeze = true;
+					//timeFreeze = true;
 					for(let i=0; i<10; i++) {
 						particles.push([dx===0 ? lastShot.x : npc.x, dy===0 ? lastShot.y : npc.y, (Math.random() -.5) * 3 + lastShot.dx, (Math.random()-.5) * 2 + lastShot.dy]);
 					}
@@ -428,7 +527,7 @@ const Game = function() {
 				}
 			}
 
-			if(timeFreeze) {
+			if(timeFreeze || npc.shot) {
 				return;
 			}
 			occupy(npc.x, npc.y, false);
@@ -576,7 +675,7 @@ const Game = function() {
 			const shouldTalk = npc.talking && now - npc.talking < lastMessage.length * SPEECH_SPEED;
 			mouth = [character['mouth'], OFFSET_X + faceDx * faceOffsetX, OFFSET_Y -26 + faceDy, {
 				animated: shouldTalk, flip: faceDx>0, animMove: moveDist,
-				frame: hero.gun ? (npc===hero ? 2 : npc.id % 3 + 1) : 0,
+				frame: hero.gun || npc!==hero && now - justPutGunDown < 2000 ? (npc===hero ? 2 : npc.id % 3 + 1) : 0,
 			}];
 		}
 
@@ -612,10 +711,11 @@ const Game = function() {
 		return lastShot.time && now - lastShot.time < 150;
 	}
 
+	let whoAreYou = false;
 	const sprites = [];
 	function getSprites(now) {
 		sprites.length = 0;
-		const heroSprite = shooting(now) ? 'gunshooting' : hero.gun ? 'gun' : 'hero';
+		const heroSprite = shooting(now) ? 'gunshooting' : showGun() ? 'gun' : 'hero';
 		const heroDx = hero.gun ? hero.face.dx : hero.move.dx;
 		const heroDy = hero.gun ? hero.face.dy : hero.move.dy;
 		sprites.push(getSprite(heroSprite, scroll.x + hero.x, scroll.y + hero.y, heroDx, heroDy, hero, now));
@@ -632,25 +732,28 @@ const Game = function() {
 			}
 		});
 		if (talking && npcToTalk) {
-			const LETTER_BOX_SIZE = Math.min(60, (now - talking) / 8);
+			const LETTER_BOX_SIZE = Math.min(80, (now - talking) / 8);
 			sprites.push(['rect',0, 0, { width: settings.size[0], height: LETTER_BOX_SIZE, zOrder: 1 }]);
 			sprites.push(['rect',0, settings.size[1] - LETTER_BOX_SIZE, { width: settings.size[0], height: LETTER_BOX_SIZE, zOrder: 1 }]);
 			if(npcToTalk && npcToTalk.talking) {
-				const text = HOT_TOPICS.normal[npcToTalk.id % HOT_TOPICS.normal.length]; //'Greetings. What can I do for you?';
+				const text = whoAreYou ? npcToTalk.introduction : HOT_TOPICS.normal[npcToTalk.id % HOT_TOPICS.normal.length]; //'Greetings. What can I do for you?';
 				lastMessage = text;
+				//console.log(npcToTalk.textColor);
 				sprites.push(['text', settings.size[0] / 2 - Math.min(text.length, STRING_LIMIT) * 2 + hero.face.dx * 20, settings.size[1] / 2 - 30, { text, color: npcToTalk.textColor, speechSpeed: SPEECH_SPEED, talkTime: npcToTalk.talking, zOrder: 3, outline: npcToTalk.outline }]);
 			
 				const shouldTalk = npcToTalk.talking && now - npcToTalk.talking < lastMessage.length * SPEECH_SPEED;
 				if(npcToTalk.talking && !shouldTalk) {
+//					sprites.push(['gun', settings.size[0] - 50, settings.size[1] - 40, { size: [20,20], zOrder: 3}]);
 					sprites.push(getMenu(now));
 				}
 			}
 		}
 		if (hero.gun) {
-			const LETTER_BOX_SIZE = Math.min(40, (now - hero.gun) / 8);
+			const LETTER_BOX_SIZE = Math.min(30, (now - hero.gun) / 8);
 			sprites.push(['rect',0, 0, { width: settings.size[0], height: LETTER_BOX_SIZE, zOrder: 2 }]);
 			sprites.push(['rect',0, settings.size[1] - LETTER_BOX_SIZE, { width: settings.size[0], height: LETTER_BOX_SIZE, zOrder: 2 }]);
-			sprites.push(['gun', settings.size[0] - 50, settings.size[1] - 40, { zOrder: 3}]);
+			sprites.push(['gun', settings.size[0] - 50, settings.size[1] - 30, { zOrder: 3}]);
+			sprites.push(['text', 10, 20, { text: "ESC TO PUT AWAY THE GUN", zOrder: 3, color: '#FFFFFF', outline: '#222222'}]);
 
 			if(shooting(now) && !lastShot.target) {
 				sprites.push(makeBullet(lastShot, scroll));
@@ -661,6 +764,10 @@ const Game = function() {
 		});
 
 		return sprites;
+	}
+
+	function showGun() {
+		return hero.gun || talking && chatIndex===3;
 	}
 
 	const particles = [
@@ -677,13 +784,17 @@ const Game = function() {
 		}];
 	}
 
+	let chatIndex = 0;
+
 	function getMenu(now) {
 		return [
 			'group', 20, settings.size[1] - 38, { zOrder: 3}, [
-				['text', 20, 0, { text: 'Who are you again?', speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
-				['text', 20, 15, { text: 'Could you take me back to memory lanes?', speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+//				['gun',  20, -40, { size: [25, 25] }],
+				['text', 20, -15, { text: 'I\'s time to take out the big gun.', speechSpeed: SPEECH_SPEED, color: '#EE5555', outline: '#222222'}],
+				['text', 20, 0, { text: 'Will you take me back to memory lanes?', speechSpeed: SPEECH_SPEED, color: '#99DDFF', outline: '#222222'}],
+				['text', 20, 15, { text: 'Who are you again?', speechSpeed: SPEECH_SPEED, color: whoAreYou ? '#444444' : 'white', outline: '#222222'}],
 				['text', 20, 30, { text: 'Goodbye', speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
-				['pointer', -16, 8, { animated: true }],
+				['pointer', -16, 8 - chatIndex * 15, { animated: true }],
 			],
 		];
 	}
