@@ -587,9 +587,10 @@ const Engine = function(document, Game) {
 
 	function renderText(sprite, definition, x, y, now, option) {
 		let text = evaluate(option.text);
+		const speechSpeed = option.speechSpeed || 30;
 		if(option.talkTime) {
 			const dt = now - option.talkTime;
-			text = text.substr(0, Math.floor(dt / 50));
+			text = text.substr(0, Math.floor(dt / speechSpeed));
 		}
 		const { alpha, color, outline } = option;
 		if(text) {
@@ -620,11 +621,12 @@ const Engine = function(document, Game) {
 	function renderImage(sprite, definition, x, y, now, option) {
 		let images = (definition.coloredImages ? definition.coloredImages[option.color] : null) || definition.images;
 		const { offset } = definition;
-		const { spriteFrameRate } = Game.settings;
+		const spriteFrameRate = definition.option.frameRate || Game.settings.spriteFrameRate || 10;
 		const timeStart = option.animationStart ? evaluate(option.animationStart, option) : 0;
-		const timeFrame = Math.floor((now - timeStart) / 1000 * (spriteFrameRate|| 10));
+		const timeFrame = Math.floor((now - timeStart) / 1000 * spriteFrameRate);
 		let frame = evaluate(option.animated, option) ? timeFrame : (option.frame || 0);
-		if (option.repeat && frame >= option.repeat * images.length) {
+		const repeat = option.repeat || definition.option.repeat || 0;
+		if (repeat && frame >= repeat * images.length) {
 			frame = images.length-1;
 		}
 		let frameOffset = frame;

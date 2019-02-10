@@ -1,6 +1,11 @@
 const Game = function() {
 	const WORLD_SIZE = [1000, 1000];
 	const STRING_LIMIT = 30;
+	const NPC_COUNT = 100;
+	const TIME_FREEZE = false;//true;
+	const SPEECH_SPEED = 30;
+
+//	const 
 
 
 	const HOT_TOPICS = {
@@ -28,12 +33,6 @@ const Game = function() {
 		"lastOne": [
 		].map(wrapText),
 	};
-
-	const MODES = [
-		'normal', 'panic',
-	];
-
-	let mode = 'normal';
 
 	const settings = {
 		size: [ 250, 250 ],
@@ -92,6 +91,36 @@ const Game = function() {
 			'mouth': 'npc-mouth',
 			'skinColor': 'pink',
 		},
+		'hero': {
+			'body-up': 'npc-body-up',
+			'body-left': 'npc-body-left',
+			'body-right': 'npc-body-left',
+			'body-down': 'npc-body',
+			'head': 'npc-head',
+			'face': 'npc-face',
+			'mouth': 'npc-mouth',
+			'skinColor': 'pink',
+		},
+		'gun': {
+			'body-up': 'npc-body-up-gun',
+			'body-left': 'npc-body-left-gun',
+			'body-right': 'npc-body-right-gun',
+			'body-down': 'npc-body-gun',
+			'head': 'npc-head',
+			'face': 'npc-face',
+			'mouth': 'npc-mouth',
+			'skinColor': 'pink',
+		},
+		'gunshooting': {
+			'body-up': 'npc-body-up-gun-shoot',
+			'body-left': 'npc-body-left-gun-shoot',
+			'body-right': 'npc-body-right-gun-shoot',
+			'body-down': 'npc-body-gun-shoot',
+			'head': 'npc-head',
+			'face': 'npc-face',
+			'mouth': 'npc-mouth',
+			'skinColor': 'pink',
+		},
 	};
 
 	function wrapText(text) {
@@ -118,6 +147,7 @@ const Game = function() {
 		y: settings.size[1] / 2, 
 		move: { dx: 0, dy: 0 }, 
 		face: { dx: 0, dy: 0 },
+		gun: 0,
 		// bodyColor: 'nude',
 		// gender: 'penis',
 	 };
@@ -126,8 +156,8 @@ const Game = function() {
 		{ name: 'default' },
 		{ name: "pink", 0xFFFFFF: 0xFFEEEE },
 		{ name: "yellow", 0xFFFFFF: 0xFFFFCC },
-		{ name: "black", 0xFFFFFF: 0x994444 },
-		{ name: "halfblack", 0xFFFFFF: 0xEE9966 },
+		{ name: "black", 0xFFFFFF: 0x994444, outline: 'white' },
+		{ name: "orange", 0xFFFFFF: 0xEE9966 },
 		{ name: "blue", 0xFFFFFF: 0x88EEDD },
 	];
 	const BODY_COLORS = [
@@ -135,18 +165,22 @@ const Game = function() {
 		{ name: 'jeans', 0x4b4a4a: 0x2e1cca, 0xa7a4a4: 0xb21818, 0x1c1c1c: 0xFFFFFE },
 		{ name: 'nude', 0x4b4a4a: 'nude', 0xa7a4a4: 'nude', 0x1c1c1c: 'nude' },
 	];
+	const NUDE = BODY_COLORS[2];
 
-	let npcs = new Array(100).fill(null).map(
+	let npcs = new Array(NPC_COUNT).fill(null).map(
 		(a, index) => {
 			const move = {
 				dx: Math.round(2*(Math.random()-.5)),
 				dy: Math.round(2*(Math.random()-.5)),
 			};
+			const faceColor = getRandom(FACE_COLORS);
 			return { 
 				id: index,
 				head: getRandom(HEADS),
-				skinColor: getRandom(FACE_COLORS).name,
-				bodyColor: index<10 ? BODY_COLORS[2].name : getRandom(BODY_COLORS.slice(0, BODY_COLORS.length - 1)).name,
+				skinColor: faceColor.name,
+				textColor: '#' + (faceColor[0xFFFFFF] + 0xF000000).toString(16).substr(1),
+				outline: faceColor.outline || '#222222',
+				bodyColor: index>90 ? NUDE.name : getRandom(BODY_COLORS.slice(0, BODY_COLORS.length - 1)).name,
 				x: 50 + Math.random()*(WORLD_SIZE[0]-100), 
 				y: 50 + Math.random()*(WORLD_SIZE[1]-100),
 				move,
@@ -165,7 +199,7 @@ const Game = function() {
 			const type = !isWall ? 'floor-tile' : 'bricks';
 			const frame = type==='floor-tile' ? getRandom([0, 1, 2, 3, 3, 3, 3, 3, 3, 3, 3]) : 
 				getRandom([0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-			tiles.push({ type, x: c * 32, y: r * 32, frame, wall:[c,r] });
+			tiles.push({ type, x: c * 32 - 16, y: r * 32 - 16, frame, wall:[c,r] });
 			walls[c + "_" + r] = isWall;
 		}
 	}
@@ -191,10 +225,26 @@ const Game = function() {
 	let npcToTalk = null;
 	let talking = 0;
 	let alreadyPressed = false;
+	let lastShot = {
+		time: 0,
+		x: 0,
+		y: 0,
+		dx: 0,
+		dy: 0,
+		target: null,
+	};
+
+	let timeFreeze = TIME_FREEZE;
 
 	function performActions(now) {
-		const scrollGx = (settings.size[0] / 2 - (talking && npcToTalk ? hero.x + hero.face.dx * 20 :hero.x));
-		const scrollGy = (settings.size[1] / 2 - hero.y + (talking && npcToTalk ? 40 : 20));
+
+		// if(!hero.gun) {
+		// 	hero.gun = now;
+		// }
+
+
+		const scrollGx = (settings.size[0] / 2 - hero.x + (hero.gun ? - hero.face.dx * 70 : talking && npcToTalk ? - hero.face.dx * 20 : 0));
+		const scrollGy = (settings.size[1] / 2 - hero.y + (hero.gun ? - hero.face.dy * 60 + 30 : talking && npcToTalk ? 40 : 20));
 		if (Math.abs(scrollGx - scroll.x) < 1) {
 			scroll.x = scrollGx;
 		} else {
@@ -216,34 +266,40 @@ const Game = function() {
 
 		const { dx, dy } = hero.move;
 		const { face } = hero;
-		if (dx === -face.dx) {
-			if (face.dy === 0) {
-				face.dy = Math.random()<.5 ? -1 : 1;
-			} else {
-				face.dx = 0;
-			}
-		} else if(dy === -face.dy) {
-			if (face.dx === 0) {
-				face.dx = Math.random()<.5 ? -1 : 1;
-			} else {
-				face.dy = 0;
-			}
-		} else {
+
+		if(dx || dy) {
 			face.dx = dx;
 			face.dy = dy;
 		}
 
+		// if (dx === -face.dx) {
+		// 	if (face.dy === 0) {
+		// 		face.dy = Math.random()<.5 ? -1 : 1;
+		// 	} else {
+		// 		face.dx = 0;
+		// 	}
+		// } else if(dy === -face.dy) {
+		// 	if (face.dx === 0) {
+		// 		face.dx = Math.random()<.5 ? -1 : 1;
+		// 	} else {
+		// 		face.dy = 0;
+		// 	}
+		// } else {
+		// 	face.dx = dx;
+		// 	face.dy = dy;
+		// }
+
 		occupy(hero.x, hero.y, false);
 		const dist = Math.sqrt(dx * dx + dy * dy);
 		if (dist) {
-			let heroSpeed = SPEED * 1.5;
+			let heroSpeed = shooting(now) ? 0 :  SPEED * 2 * (hero.gun ? 2 : 1);
 			let realDx = heroSpeed * dx / dist;
 			let realDy = heroSpeed * dy / dist;
 			if (blocked(hero.x + realDx, hero.y + realDy)) {
-				if (!blocked(hero.x + heroSpeed, hero.y)) {
-					hero.x += heroSpeed;
-				} else if(!blocked(hero.x, hero.y + heroSpeed)) {
-					hero.y += heroSpeed;
+				if (!blocked(hero.x + heroSpeed * dx, hero.y)) {
+					hero.x += heroSpeed * dx;
+				} else if(!blocked(hero.x, hero.y + heroSpeed * dy)) {
+					hero.y += heroSpeed * dy;
 				} else {
 
 				}
@@ -254,25 +310,53 @@ const Game = function() {
 		}
 		occupy(hero.x, hero.y, true);
 
+		if(shooting(now)) {
+			const shotDx = lastShot.dx * 40;
+			const shotDy = lastShot.dy * 40;
+			lastShot.x += shotDx;
+			lastShot.y += shotDy;
+
+			particles.forEach(particle => {
+				const [,,dx,dy] = particle;
+				particle[0] += dx;
+				particle[1] += dy;
+			});
+		} else if(particles.length) {
+			particles.length = 0;
+		}
+
+
 		if(!alreadyPressed && Keyboard.action.down) {
-			if(npcToTalk) {
-				talking = talking ? 0 : now;
-				if(talking) {
-					// npcToTalk.move.dx = 0;
-					// npcToTalk.move.dy = 0;
-					hero.move.dx = 0;
-					hero.move.dy = 0;
-					hero.face = {
-						dx: hero.x < npcToTalk.x ? 1 : hero.x > npcToTalk.x ? -1 : 0, dy: 0,
-					};
-					npcToTalk.face = {
-						dx: hero.x < npcToTalk.x ? -1 : hero.x > npcToTalk.x ? 1 : 0, dy: 0,
-					};
-				} else {
-					npcToTalk.move.dx = Math.floor(Math.random() * 3) - 1;
-					npcToTalk.move.dy = Math.floor(Math.random() * 3) - 1;		
-					npcToTalk.face = npcToTalk.move;	
-					npcToTalk.talking = 0;		
+			if (hero.gun) {
+				lastShot.time = now;
+				lastShot.target = null;
+				lastShot.dx = hero.face.dx;
+				lastShot.dy = lastShot.dx ? 0 : (hero.face.dy || 1);
+				lastShot.x = hero.x + (Math.random()-.5)*5 + lastShot.dx * 20;
+				lastShot.y = hero.y + (Math.random()-.5)*5 + lastShot.dy * 20 + (lastShot.dy < 0 ? -20 : 0);
+				for(let i=0; i<10; i++) {
+					particles.push([lastShot.x, lastShot.y, (Math.random() -.5) * 3 + lastShot.dx, (Math.random()-.5) * 2 + lastShot.dy]);
+				}
+			} else {
+				if(npcToTalk) {
+					talking = talking ? 0 : now;
+					if(talking) {
+						// npcToTalk.move.dx = 0;
+						// npcToTalk.move.dy = 0;
+						hero.move.dx = 0;
+						hero.move.dy = 0;
+						hero.face = {
+							dx: hero.x < npcToTalk.x ? 1 : hero.x > npcToTalk.x ? -1 : 0, dy: 0,
+						};
+						npcToTalk.face = {
+							dx: hero.x < npcToTalk.x ? -1 : hero.x > npcToTalk.x ? 1 : 0, dy: 0,
+						};
+					} else {
+						npcToTalk.move.dx = Math.floor(Math.random() * 3) - 1;
+						npcToTalk.move.dy = Math.floor(Math.random() * 3) - 1;		
+						npcToTalk.face = npcToTalk.move;	
+						npcToTalk.talking = 0;		
+					}
 				}
 			}
 			alreadyPressed = true;
@@ -306,16 +390,56 @@ const Game = function() {
 			}
 		}
 
+		const npcSpeed = SPEED * (hero.gun ? 5 : 1);
+		const wasShooting = shooting(now);
+		const SHOOT_MARGIN_X = 100;
+		const SHOOT_MARGIN_Y = 100;
+		const SHOOTING_AREA_X = 10;
+		const SHOOTING_AREA_Y = 20;
+		let shotNpc = null;
+
 		npcs.forEach(npc => {
+			if(wasShooting && !shotNpc && lastShot.target != npc)
+			{
+				const { dx, dy } = lastShot;
+				const [width, height] = settings.size;
+				let shot = false;
+				if(!dx) {	//	SHOOTING VERTICAL
+					if (Math.abs(npc.x - lastShot.x) < SHOOTING_AREA_X && onScreen(npc)) {
+//						console.log(npc.x, lastShot.x, npc.x - lastShot.x);
+						shot = true;
+					}
+				} else if(!dy) {	//	SHOOTING HORIZONTAL
+					if (Math.abs(npc.y - 16 - lastShot.y) < SHOOTING_AREA_Y && onScreen(npc)) {
+						shot = true;
+					}
+//					console.log(npc.y, lastShot.y, npc.y - 16 - lastShot.y);
+				}
+				if(shot) {
+					shotNpc = npc;
+					npc.shot = true;
+					lastShot.target = npc;
+					timeFreeze = true;
+					for(let i=0; i<10; i++) {
+						particles.push([dx===0 ? lastShot.x : npc.x, dy===0 ? lastShot.y : npc.y, (Math.random() -.5) * 3 + lastShot.dx, (Math.random()-.5) * 2 + lastShot.dy]);
+					}
+
+//					console.log(npc);
+				}
+			}
+
+			if(timeFreeze) {
+				return;
+			}
 			occupy(npc.x, npc.y, false);
 
 			//	avoid hero
-			if (mode==='panic')
+			if (hero.gun)
 			{
 				const dx = hero.x - npc.x;
 				const dy = hero.y - npc.y;
 				const distHero = Math.sqrt(dx * dx + dy * dy);
-				if (distHero < 100) {
+				if (distHero < 60) {
 					if (dx * npc.move.dx >= 0 && dy * npc.move.dy >= 0) {
 						npc.move.dx = Math.floor(Math.random() * 3) - 1;
 						npc.move.dy = Math.floor(Math.random() * 3) - 1;
@@ -324,6 +448,9 @@ const Game = function() {
 						npc.move.dx *= -1;
 						npc.move.dy *= -1;
 					}
+				} else if(distHero < 100 && dx * npc.move.dx >= 0 && dy * npc.move.dy >= 0) {
+					npc.move.dx = Math.floor(Math.random() * 3) - 1;
+					npc.move.dy = Math.floor(Math.random() * 3) - 1;
 				} else if (distHero > 400) {
 					npc.move.dx = 0;
 					npc.move.dy = 0;					
@@ -333,7 +460,7 @@ const Game = function() {
 				const dy = hero.y - npc.y;
 				const distHero = Math.sqrt(dx * dx + dy * dy);
 				if (talking && npcToTalk) {
-					if (distHero < 100) {
+					if (distHero < 60) {
 						if (dx * npc.move.dx >= 0 && dy * npc.move.dy >= 0) {
 							npc.move.dx = Math.floor(Math.random() * 3) - 1;
 							npc.move.dy = Math.floor(Math.random() * 3) - 1;
@@ -369,8 +496,8 @@ const Game = function() {
 				let { dx, dy } = npc.move;
 				let dist = Math.sqrt(dx * dx + dy * dy);
 				if (dist) {
-					let realDx = SPEED * dx / dist;
-					let realDy = SPEED * dy / dist;
+					let realDx = npcSpeed * dx / dist;
+					let realDy = npcSpeed * dy / dist;
 					if (blocked(npc.x + realDx, npc.y + realDy, true)) {
 						if (!blocked(npc.x + realDx, npc.y - realDy, true)) {
 							realDy = -realDy;
@@ -411,7 +538,8 @@ const Game = function() {
 
 	function getSprite(name, x, y, dx, dy, npc, now) {
 		const OFFSET_X = -16, OFFSET_Y = -32;
-		const moveDist = Math.sqrt(dx*dx + dy*dy);
+		const move = npc.move;
+		const moveDist = Math.sqrt(move.dx*move.dx + move.dy*move.dy);
 		const character = characters[name];
 		const headSprite = npc.head || character.head;
 
@@ -428,28 +556,35 @@ const Game = function() {
 
 		if (!dx) {
 			if (dy < 0) {
-				body = [character['body-up'], OFFSET_X, OFFSET_Y, {animated: true, color: comboColor}];
+				body = [character['body-up'], OFFSET_X, OFFSET_Y, {animated: moveDist, color: comboColor}];
 			} else if(dy > 0) {
-				body = [character['body-down'], OFFSET_X, OFFSET_Y, {animated: true, color: comboColor}];
+				body = [character['body-down'], OFFSET_X, OFFSET_Y, {animated: moveDist, color: comboColor}];
 			} else {
-				body = [character['body-down'], OFFSET_X, OFFSET_Y, {animated: false, color: comboColor}];
+				body = [character['body-down'], OFFSET_X, OFFSET_Y, {animated: moveDist, color: comboColor}];
 			}
 		} else {
-			body = [character['body-left'], OFFSET_X, OFFSET_Y, {animated: true, flip: dx>0, color: comboColor}];
+			if (dx < 0) {
+				body = [character['body-left'], OFFSET_X, OFFSET_Y, {animated: moveDist, color: comboColor}];
+			} else {
+				body = [character['body-right'], OFFSET_X, OFFSET_Y, {animated: moveDist, flip: !npc.gun && dx>0, color: comboColor}];
+			}
 		}
 
 		if (dy >= 0) {
 			const faceOffsetX = dy===0 ? (faceDx < 0 ? 4 : 5) : (faceDx < 0 ? 1 : 2);
 			face = [character['face'], OFFSET_X + faceDx * faceOffsetX, OFFSET_Y -26 + faceDy, {animated: true, animMove: moveDist, flip: faceDx>0}];
-			const shouldTalk = npc.talking && now - npc.talking < lastMessage.length * 50;
-			mouth = [character['mouth'], OFFSET_X + faceDx * faceOffsetX, OFFSET_Y -26 + faceDy, {animated: shouldTalk, flip: faceDx>0, animMove: moveDist}];
+			const shouldTalk = npc.talking && now - npc.talking < lastMessage.length * SPEECH_SPEED;
+			mouth = [character['mouth'], OFFSET_X + faceDx * faceOffsetX, OFFSET_Y -26 + faceDy, {
+				animated: shouldTalk, flip: faceDx>0, animMove: moveDist,
+				frame: hero.gun ? (npc===hero ? 2 : npc.id % 3 + 1) : 0,
+			}];
 		}
 
 		if (bodyColor==='nude' && body[0]===character['body-down']) {
 			downThere = [npc.gender || 'penis', OFFSET_X, OFFSET_Y, {animated: moveDist}];
 		}
 
-		const bubble = npc === npcToTalk && !talking ? ['bubble', OFFSET_X - 5, OFFSET_Y - 30, {}] : 0;
+		const bubble = !hero.gun && npc === npcToTalk && !talking ? ['bubble', OFFSET_X - 5, OFFSET_Y - 30, {}] : 0;
 
 		return [
 			'group', x, y, {}, [
@@ -473,13 +608,20 @@ const Game = function() {
 		return object.x + scroll.x > -SPRITE_SIZE && object.x + scroll.x < width + SPRITE_SIZE && object.y + scroll.y > -SPRITE_SIZE && object.y + scroll.y < height + SPRITE_SIZE * 2;
 	}
 
+	function shooting(now) {
+		return lastShot.time && now - lastShot.time < 150;
+	}
+
 	const sprites = [];
 	function getSprites(now) {
 		sprites.length = 0;
-		sprites.push(getSprite('pixie', scroll.x + hero.x, scroll.y + hero.y, hero.move.dx, hero.move.dy, hero, now));
+		const heroSprite = shooting(now) ? 'gunshooting' : hero.gun ? 'gun' : 'hero';
+		const heroDx = hero.gun ? hero.face.dx : hero.move.dx;
+		const heroDy = hero.gun ? hero.face.dy : hero.move.dy;
+		sprites.push(getSprite(heroSprite, scroll.x + hero.x, scroll.y + hero.y, heroDx, heroDy, hero, now));
 
 		npcs.forEach(npc => {
-			if (onScreen(npc)) {
+			if (onScreen(npc) && (lastShot.target != npc || Math.random() > .8)) {
 				sprites.push(getSprite(npc.type, scroll.x + npc.x, scroll.y + npc.y, npc.move.dx, npc.move.dy, npc, now));
 			}
 		});
@@ -496,29 +638,57 @@ const Game = function() {
 			if(npcToTalk && npcToTalk.talking) {
 				const text = HOT_TOPICS.normal[npcToTalk.id % HOT_TOPICS.normal.length]; //'Greetings. What can I do for you?';
 				lastMessage = text;
-				sprites.push(['text', settings.size[0] / 2 - Math.min(text.length, STRING_LIMIT) * 2 + hero.face.dx * 20, settings.size[1] / 2 - 30, { text, talkTime: npcToTalk.talking, zOrder: 2, color: 'white', outline: '#222222'}]);
-//				sprites.push(['text',10, 240, { text: 'hello', zOrder: 2, color: 'white', outline: '#333333'}]);
+				sprites.push(['text', settings.size[0] / 2 - Math.min(text.length, STRING_LIMIT) * 2 + hero.face.dx * 20, settings.size[1] / 2 - 30, { text, color: npcToTalk.textColor, speechSpeed: SPEECH_SPEED, talkTime: npcToTalk.talking, zOrder: 3, outline: npcToTalk.outline }]);
+			
+				const shouldTalk = npcToTalk.talking && now - npcToTalk.talking < lastMessage.length * SPEECH_SPEED;
+				if(npcToTalk.talking && !shouldTalk) {
+					sprites.push(getMenu(now));
+				}
 			}
 		}
+		if (hero.gun) {
+			const LETTER_BOX_SIZE = Math.min(40, (now - hero.gun) / 8);
+			sprites.push(['rect',0, 0, { width: settings.size[0], height: LETTER_BOX_SIZE, zOrder: 2 }]);
+			sprites.push(['rect',0, settings.size[1] - LETTER_BOX_SIZE, { width: settings.size[0], height: LETTER_BOX_SIZE, zOrder: 2 }]);
+			sprites.push(['gun', settings.size[0] - 50, settings.size[1] - 40, { zOrder: 3}]);
+
+			if(shooting(now) && !lastShot.target) {
+				sprites.push(makeBullet(lastShot, scroll));
+			}
+		}
+		particles.forEach(particle => {
+			sprites.push(['rect', scroll.x + particle[0], scroll.y + particle[1] - 16, { zOrder: 1, color: 'white', width: 2, height: 2 }]);
+		});
 
 		return sprites;
 	}
 
+	const particles = [
+	];
+
+	function makeBullet(lastShot, scroll) {
+		const { dx, dy } = lastShot;
+		const [width, height] = settings.size;
+		return ['rect', scroll.x + lastShot.x  + (dx<0 ? -width : 0), scroll.y + lastShot.y -16 + (dy<0 ? -height:0), {
+			zOrder: 1,
+			width: dy == 0 ? width : 3,
+			height: dx == 0 ? height : 3,
+			color: 'white',
+		}];
+	}
+
+	function getMenu(now) {
+		return [
+			'group', 20, settings.size[1] - 38, { zOrder: 3}, [
+				['text', 20, 0, { text: 'Who are you again?', speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+				['text', 20, 15, { text: 'Could you take me back to memory lanes?', speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+				['text', 20, 30, { text: 'Goodbye', speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+				['pointer', -16, 8, { animated: true }],
+			],
+		];
+	}
+
 	let lastMessage = "";
-
-
-	// const FACE_COLORS = [
-	// 	{ name: 'default' },
-	// 	{ name: "pink", 0xFFFFFF: 0xFFEEEE },
-	// 	{ name: "yellow", 0xFFFFFF: 0xFFFFCC },
-	// 	{ name: "black", 0xFFFFFF: 0x994444 },
-	// 	{ name: "halfblack", 0xFFFFFF: 0xEE9966 },
-	// 	{ name: "blue", 0xFFFFFF: 0x88EEDD },
-	// ];
-	// const BODY_COLORS = [
-	// 	{ name: 'default' },
-	// 	{ name: 'jeans', 0x4b4a4a: 0x2e1cca, 0xa7a4a4: 0xb21818, 0x000000: 0xFFFFFE },
-	// ];
 
 	function comboColors(faceColors, bodyColors) {
 		const colors = [];
@@ -565,6 +735,51 @@ const Game = function() {
 			['npc-body.png', 32, 32, {
 				colors: comboColors(FACE_COLORS, BODY_COLORS),				
 			}],
+			['npc-body-left-gun.png', 32, 32, {
+				colors: comboColors(FACE_COLORS, BODY_COLORS),				
+			}],
+			['npc-body-right-gun.png', 32, 32, {
+				colors: comboColors(FACE_COLORS, BODY_COLORS),				
+			}],
+			['npc-body-up-gun.png', 32, 32, {
+				colors: comboColors(FACE_COLORS, BODY_COLORS),				
+			}],
+			['npc-body-gun.png', 32, 32, {
+				colors: comboColors(FACE_COLORS, BODY_COLORS),	
+			}],
+			['npc-body-left-gun-shoot.png', 32, 32, {
+				colors: comboColors(FACE_COLORS, BODY_COLORS),				
+				count: 3,			
+				frameRate: 30,
+				repeat: 1,
+			}],
+			['npc-body-right-gun-shoot.png', 32, 32, {
+				colors: comboColors(FACE_COLORS, BODY_COLORS),				
+				count: 3,			
+				frameRate: 30,
+				repeat: 1,
+			}],
+			['npc-body-up-gun-shoot.png', 32, 32, {
+				colors: comboColors(FACE_COLORS, BODY_COLORS),				
+				count: 3,			
+				frameRate: 30,
+				repeat: 1,
+			}],
+			['npc-body-gun-shoot.png', 32, 32, {
+				colors: comboColors(FACE_COLORS, BODY_COLORS),				
+				count: 3,			
+				frameRate: 30,
+				repeat: 1,
+			}],
+			['gun.png', 32, 32, {
+			}],
+			['bullet.png', 32, 32, {
+			}],
+			['pointer.png', 32, 32, {
+				count: 11,
+				frameRate: 60,
+			}],
+
 			['penis.png', 32, 32, {
 			}],
 			['vagina.png', 32, 32, {
