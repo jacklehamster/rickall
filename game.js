@@ -1,7 +1,7 @@
 const Game = function() {
-	const WORLD_SIZE = [1000, 1000];
+	const WORLD_SIZE = [600,600];//[1000, 1000];
 	const STRING_LIMIT = 30;
-	const NPC_COUNT = 100;
+	const NPC_COUNT = 20;//100;
 	const TIME_FREEZE = false;//true;
 	const SPEECH_SPEED = 30;
 
@@ -49,16 +49,27 @@ const Game = function() {
 		return string.charAt(0).toUpperCase() + string.substr(1).toLowerCase();
 	}
 
-	function randomIntroduction(id) {
+	function randomIntroduction(id, name) {
 		return "You don't recognize me? I am " 
-			+ makeCap(RANDOM_SYLLABLES[(id+12345)%RANDOM_SYLLABLES.length]
-			+ RANDOM_SYLLABLES[id%RANDOM_SYLLABLES.length])
+			+ name
 			+ " your "
 			+ OCCUPATIONS[(id+323)%OCCUPATIONS.length]
 			+ ". We had " + HOBBY[(id +3333)%HOBBY.length] + " last "
 			+ TIME[(id + 13131) % TIME.length] + " "
 			+ LOCATIONS[(id + 37)%LOCATIONS.length] + ".";
 	}
+
+	const GOOD_MEMORIES = [
+		"You remember that time you all went to Magic Mountain on that giant rollercoaster. What a fun time you had with {name}!",
+		"You remember that wonderful day on an excursion on top of the replica of the Titanic boat. You spread your arms as {name} was holding you and felt lying flying.",
+		"You remember that romantic night on top of Lover's Hill, sitting in a car with {name} and watching the sunset. You fell sound asleep tucked in {name}'s arms.",
+	];
+
+	const BAD_MEMORIES = [
+		"You remember that time you all went to Magic Mountain on that giant rollercoaster. {name} vomitted his lunch all over your pants on the way down.",
+		"You remember that wonderful day on an excursion on top of the replica of Titanic boat. {name} thought it'd be funny to push you overboard. You spent the rest of the day at the hospital.",
+		"You remember that romantic night on top of Lover's Hill, sitting in a car with {name} and watching the sunset. {name} farted, but we couldn't open the window as it was too cold.",
+	];
 
 
 	const HOT_TOPICS = {
@@ -176,21 +187,38 @@ const Game = function() {
 			'mouth': 'npc-mouth',
 			'skinColor': 'pink',
 		},
+		'gary': {
+			'body-up': 'npc-body-up',
+			'body-left': 'npc-body-left',
+			'body-right': 'npc-body-left',
+			'body-down': 'npc-body',
+			'head': 'gary-head',
+			'face': 'gary-face',
+			'mouth': 'npc-mouth',
+			'skinColor': 'pink',
+			'bodyColor': 'gary',
+		},
 	};
 
-	function wrapText(text) {
-		const split = text.split(" ");
+	function wrapTextWithLimit(text, limit) {
+		const split = text.split("\n").join(" ").split("  ").join(" ").split(" ");
 		const newSplit = [];
 		let length = 0;
 		for(let i=0; i<split.length; i++) {
-			if(length + split[i].length > STRING_LIMIT) {
+			if(length + split[i].length > limit) {
+			console.log(split[i].length + limit, length, split[i]);
 				newSplit.push('\n');
 				length = 0;
 			}
 			length += split[i].length + 1;
+			console.log(length, split[i])
 			newSplit.push(split[i]);
 		}
-		return newSplit.join(" ").split("\n ").join("\n");
+		return newSplit.join(" ").split("\n ").join("\n");		
+	}
+
+	function wrapText(text) {
+		return wrapTextWithLimit(text, STRING_LIMIT);
 	}
 
 	const HEADS = ['v-head', 'npc-head', 'round-head'];
@@ -219,8 +247,27 @@ const Game = function() {
 		{ name: 'default' },
 		{ name: 'jeans', 0x4b4a4a: 0x2e1cca, 0xa7a4a4: 0xb21818, 0x1c1c1c: 0xFFFFFE },
 		{ name: 'nude', 0x4b4a4a: 'nude', 0xa7a4a4: 'nude', 0x1c1c1c: 'nude' },
+		{ name: 'gary', 0x4b4a4a: 0xaae1d7, 0xa7a4a4: 0xaae1d7, 0x1c1c1c: 'nude' },
 	];
 	const NUDE = BODY_COLORS[2];
+
+	function npcHusband(index) {
+		return index === 1;
+	}
+
+	function husbandIntro(gender) {
+		return wrapText("I'm Sleepy Gary, your lovely "+(gender==='penis' ? 'husband' : 'wife')+". We've had a wonderful life together, remember?");
+	}
+
+	function husbandMemory(gender) {
+		return wrapText("You remember the day you said 'I do.' to Sleepy Gary, your lovely husband. He showed up at the ceremony in his usual pyjamas, having forgotten that day. This is a cherrished memory you'll always remember.");
+	}
+
+	function randomMemory(index, good, name) {
+		const list = good ? GOOD_MEMORIES : BAD_MEMORIES;
+		const text = list[index % list.length];
+		return text.split("{name}").join(name);
+	}
 
 	let npcs = new Array(NPC_COUNT).fill(null).map(
 		(a, index) => {
@@ -228,23 +275,29 @@ const Game = function() {
 				dx: Math.round(2*(Math.random()-.5)),
 				dy: Math.round(2*(Math.random()-.5)),
 			};
-			const faceColor = getRandom(FACE_COLORS);
+			const husband = npcHusband(index);
+			const gender = husband || Math.random() < .5 ? 'penis' : 'vagina';
+			const faceColor = husband ? FACE_COLORS.filter(a => a.name==="pink")[0] : getRandom(FACE_COLORS);
+			const name = makeCap(RANDOM_SYLLABLES[(index+12345)%RANDOM_SYLLABLES.length]
+				+ RANDOM_SYLLABLES[index%RANDOM_SYLLABLES.length]);
 			return { 
 				id: index,
-				head: getRandom(HEADS),
+				head: husband ? 'gary-head' : getRandom(HEADS),
 				skinColor: faceColor.name,
 				textColor: '#' + (faceColor[0xFFFFFF] + 0xF000000).toString(16).substr(1),
 				outline: faceColor.outline || '#222222',
-				bodyColor: index>90 ? NUDE.name : getRandom(BODY_COLORS.slice(0, BODY_COLORS.length - 1)).name,
+				bodyColor: husband ? 'gary' : index>=NPC_COUNT * .9 ? NUDE.name : getRandom(BODY_COLORS.slice(0, BODY_COLORS.length - 2)).name,
 				x: 50 + Math.random()*(WORLD_SIZE[0]-100), 
 				y: 50 + Math.random()*(WORLD_SIZE[1]-100),
 				move,
 				face: move,
 				lookAtHero: { dx: 0, dy: 0},
-				type: getRandom(['npc', 'pixie', 'mad', 'smart']),
-				gender: Math.random() < .5 ? 'penis' : 'vagina',
-				introduction: wrapText(randomIntroduction(index + randomMess)),
+				type: husband ? 'gary' : getRandom(['npc', 'pixie', 'mad', 'smart']),
+				gender,
+				introduction: husband ? husbandIntro(gender) : wrapText(randomIntroduction(index + randomMess, name)),
+				memory: wrapTextWithLimit(husband ? husbandMemory(gender) : randomMemory(index + randomMess, false, name), 46),
 				blocked: 0,
+				husband,
 			};
 		}
 	);
@@ -325,7 +378,7 @@ const Game = function() {
 		} else {
 			if (!waitUp && Keyboard.move.dy) {
 				chatIndex = Math.max(0, Math.min(3, chatIndex - Keyboard.move.dy)); //(chatIndex % 4 - Keyboard.move.dy + 4) % 4;
-				if(whoAreYou && chatIndex===1) {
+				if(whoAreYou() && chatIndex===1) {
 					chatIndex = Math.max(0, Math.min(3, chatIndex - Keyboard.move.dy));
 				}
 				waitUp = true;
@@ -421,12 +474,13 @@ const Game = function() {
 						npcToTalk.lookAtHero.dx = hero.x < npcToTalk.x ? -1 : hero.x > npcToTalk.x ? 1 : 0;
 						npcToTalk.lookAtHero.dy = 0;
 						chatIndex = 0;
-						whoAreYou = false;
+						discussionTopic = null;
 					} else {
 
 						switch(chatIndex) {
 							case 0: // GOODBYE
 							{
+								discussionTopic = null;
 								npcToTalk.move.dx = Math.floor(Math.random() * 3) - 1;
 								npcToTalk.move.dy = Math.floor(Math.random() * 3) - 1;		
 								npcToTalk.face = npcToTalk.move;	
@@ -435,8 +489,17 @@ const Game = function() {
 							break;
 							case 1: // WHO ARE YOU?
 							{
-								if (!whoAreYou) {
-									whoAreYou = true;
+								if (!whoAreYou()) {
+									discussionTopic = "WHO_ARE_YOU";
+									npcToTalk.talking = 0;
+									chatIndex = 0;
+								}
+							}
+							break;
+							case 2: // MEMORY LANES
+							{
+								if (!memoryLanes()) {
+									discussionTopic = "MEMORY";
 									npcToTalk.talking = 0;
 									chatIndex = 0;
 								}
@@ -444,6 +507,7 @@ const Game = function() {
 							break;
 							case 3: // GUN
 							{
+								discussionTopic = null;
 								hero.gun = now;
 								npcToTalk.move.dx = Math.floor(Math.random() * 3) - 1;
 								npcToTalk.move.dy = Math.floor(Math.random() * 3) - 1;		
@@ -501,7 +565,7 @@ const Game = function() {
 		let shotNpc = null;
 
 		npcs.forEach(npc => {
-			if(wasShooting && !shotNpc && lastShot.target != npc)
+			if(wasShooting && !shotNpc && lastShot.target != npc && !npc.husband)
 			{
 				const { dx, dy } = lastShot;
 				const [width, height] = settings.size;
@@ -673,7 +737,7 @@ const Game = function() {
 		let body = null;
 		let mouth = null;
 		let downThere = null;
-		let head = [headSprite, OFFSET_X, OFFSET_Y +-26, {animated: moveDist, color: skinColor}];
+		let head = [headSprite, OFFSET_X, OFFSET_Y +-26, {animated: moveDist, color: skinColor, flip: npc.husband ? faceDx>0 : false }];
 
 		if (!dx) {
 			if (dy < 0) {
@@ -691,10 +755,10 @@ const Game = function() {
 			}
 		}
 
-		if (dy >= 0) {
+		if (dy >= 0 || npc.husband) {
 			const faceOffsetX = dy===0 ? (faceDx < 0 ? 4 : 5) : (faceDx < 0 ? 1 : 2);
 			face = [character['face'], OFFSET_X + faceDx * faceOffsetX, OFFSET_Y -26 + faceDy, {animated: true, animMove: moveDist, flip: faceDx>0}];
-			const shouldTalk = npc.talking && now - npc.talking < lastMessage.length * SPEECH_SPEED;
+			const shouldTalk = !memoryLanes() && npc.talking && now - npc.talking < lastMessage.length * SPEECH_SPEED;
 			mouth = [character['mouth'], OFFSET_X + faceDx * faceOffsetX, OFFSET_Y -26 + faceDy, {
 				animated: shouldTalk, flip: faceDx>0, animMove: moveDist,
 				frame: hero.gun || npc!==hero && (now - justPutGunDown < 2000 || showGun()) ? (npc===hero ? 2 : npc.id % 3 + 1) : 0,
@@ -733,7 +797,16 @@ const Game = function() {
 		return lastShot.time && now - lastShot.time < 150;
 	}
 
-	let whoAreYou = false;
+	let discussionTopic = null;
+	function whoAreYou() {
+		return discussionTopic == "WHO_ARE_YOU";
+	}
+
+	function memoryLanes() {
+		return discussionTopic == "MEMORY";
+	}
+
+
 	const sprites = [];
 	function getSprites(now) {
 		sprites.length = 0;
@@ -743,7 +816,7 @@ const Game = function() {
 		sprites.push(getSprite(heroSprite, scroll.x + hero.x, scroll.y + hero.y, heroDx, heroDy, hero, now));
 
 		npcs.forEach(npc => {
-			if (onScreen(npc) && (lastShot.target != npc || Math.random() > .8)) {
+			if (onScreen(npc) && (!npc.shot || Math.random() > .8)) {
 				sprites.push(getSprite(npc.type, scroll.x + npc.x, scroll.y + npc.y, npc.move.dx, npc.move.dy, npc, now));
 			}
 		});
@@ -758,10 +831,14 @@ const Game = function() {
 			sprites.push(['rect',0, 0, { width: settings.size[0], height: LETTER_BOX_SIZE, zOrder: 1 }]);
 			sprites.push(['rect',0, settings.size[1] - LETTER_BOX_SIZE, { width: settings.size[0], height: LETTER_BOX_SIZE, zOrder: 1 }]);
 			if(npcToTalk && npcToTalk.talking) {
-				const text = whoAreYou ? npcToTalk.introduction : HOT_TOPICS.normal[npcToTalk.id % HOT_TOPICS.normal.length]; //'Greetings. What can I do for you?';
+				const text = memoryLanes() ? npcToTalk.memory : whoAreYou() ? npcToTalk.introduction : npcToTalk.husband ? "I've missed you" : HOT_TOPICS.normal[npcToTalk.id % HOT_TOPICS.normal.length]; //'Greetings. What can I do for you?';
 				lastMessage = text;
 				//console.log(npcToTalk.textColor);
-				sprites.push(['text', settings.size[0] / 2 - Math.min(text.length, STRING_LIMIT) * 2 + hero.face.dx * 20, settings.size[1] / 2 - 30, { text, color: npcToTalk.textColor, speechSpeed: SPEECH_SPEED, talkTime: npcToTalk.talking, zOrder: 3, outline: npcToTalk.outline }]);
+				if(memoryLanes()) {
+					sprites.push(['text', 20, 40, { text, color: 'white', speechSpeed: SPEECH_SPEED, talkTime: npcToTalk.talking, zOrder: 3, outline: '#222222' }]);
+				} else {
+					sprites.push(['text', settings.size[0] / 2 - Math.min(text.length, STRING_LIMIT) * 2 + hero.face.dx * 20, settings.size[1] / 2 - 30, { text, color: npcToTalk.textColor, speechSpeed: SPEECH_SPEED, talkTime: npcToTalk.talking, zOrder: 3, outline: npcToTalk.outline }]);
+				}
 			
 				const shouldTalk = npcToTalk.talking && now - npcToTalk.talking < lastMessage.length * SPEECH_SPEED;
 				if(npcToTalk.talking && !shouldTalk) {
@@ -813,8 +890,9 @@ const Game = function() {
 			'group', 20, settings.size[1] - 35, { zOrder: 3}, [
 //				['gun',  20, -40, { size: [25, 25] }],
 				['text', 20, -15, { text: 'I\'s time to take out the big gun.', speechSpeed: SPEECH_SPEED, color: '#EE5555', outline: '#222222'}],
-				['text', 20, 0, { text: 'Will you take me back to memory lanes?', speechSpeed: SPEECH_SPEED, color: '#99DDFF', outline: '#222222'}],
-				['text', 20, 15, { text: 'Who are you again?', speechSpeed: SPEECH_SPEED, color: whoAreYou ? '#444444' : 'white', outline: '#222222'}],
+				// ['text', 20, 0, { text: 'Will you take me back to memory lanes?', speechSpeed: SPEECH_SPEED, color: '#AAEEFF', outline: '#222222'}],
+				['text', 20, 0, { text: 'Will you take me back to memory lanes?', speechSpeed: SPEECH_SPEED, color: memoryLanes() ? '#444444' : 'white', outline: '#222222'}],
+				['text', 20, 15, { text: 'Who are you again?', speechSpeed: SPEECH_SPEED, color: whoAreYou() ? '#444444' : 'white', outline: '#222222'}],
 				['text', 20, 30, { text: 'Goodbye', speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
 				['pointer', -16, 8 - chatIndex * 15, { animated: true }],
 			],
@@ -922,6 +1000,9 @@ const Game = function() {
 			['npc-face.png', 32, 32, {
 				animOffset: WALK_ANIM_OFFSET,
 			}],
+			['gary-face.png', 32, 32, {
+				animOffset: WALK_ANIM_OFFSET,
+			}],
 			['mad-face.png', 32, 32, {
 				count: 20,
 				animOffset: WALK_ANIM_OFFSET,
@@ -939,6 +1020,10 @@ const Game = function() {
 				colors: FACE_COLORS,
 			}],
 			['round-head.png', 32, 32, {
+				animOffset: WALK_ANIM_OFFSET,
+				colors: FACE_COLORS,
+			}],
+			['gary-head.png', 32, 32, {
 				animOffset: WALK_ANIM_OFFSET,
 				colors: FACE_COLORS,
 			}],
