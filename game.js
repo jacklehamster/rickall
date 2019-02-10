@@ -7,8 +7,8 @@ const Game = function() {
 
 	const RANDOM_SYLLABLES = [
 		'jo', 'ja', 'ne', 'ka', 'vi', 'dof', 'lin', 'chu', 'rat', 'be', 'do', 'nald', 'tay', 'lor', 
-		'ric', 'ky', 'mor', 'ty', 'jer', 'ry', 'vin', 'cent',
-		'har', 'wubbalubbadubdub'
+		'ric', 'ky', 'mor', 'ty', 'jer', 'ry', 'vin', 'cent', 'liz', 'beth', 'scar', 'lett',
+		'emi', 'elvi', 'har', 'wubbalubbadubdub'
 	];
 
 	const randomMess = Math.floor(Math.random()*10000000);
@@ -16,9 +16,10 @@ const Game = function() {
 	const OCCUPATIONS = [
 		'dentist', 'friend', 'best friend', 'mistress',
 		'teacher', 'financial advisor', 'massage therapist',
-		'personal doormat', 'milkman', 'neighbor',
+		'pet', 'milkman', 'neighbor', 'worst nightmare',
 		'cousin', 'brother', 'sister', "buddy", "favorite actor",
-		"number one fan", "first love",
+		"biggest fan", "first love", 'waitress', 'butler', 'babysitter',
+		'janitor', 'landlord', 'doctor', 'lawyer',
 	];
 
 	const LOCATIONS = [
@@ -206,12 +207,12 @@ const Game = function() {
 		let length = 0;
 		for(let i=0; i<split.length; i++) {
 			if(length + split[i].length > limit) {
-			console.log(split[i].length + limit, length, split[i]);
+			//console.log(split[i].length + limit, length, split[i]);
 				newSplit.push('\n');
 				length = 0;
 			}
 			length += split[i].length + 1;
-			console.log(length, split[i])
+			//console.log(length, split[i])
 			newSplit.push(split[i]);
 		}
 		return newSplit.join(" ").split("\n ").join("\n");		
@@ -278,8 +279,8 @@ const Game = function() {
 			const husband = npcHusband(index);
 			const gender = husband || Math.random() < .5 ? 'penis' : 'vagina';
 			const faceColor = husband ? FACE_COLORS.filter(a => a.name==="pink")[0] : getRandom(FACE_COLORS);
-			const name = makeCap(RANDOM_SYLLABLES[(index+12345)%RANDOM_SYLLABLES.length]
-				+ RANDOM_SYLLABLES[index%RANDOM_SYLLABLES.length]);
+			const name = makeCap(RANDOM_SYLLABLES[(randomMess + index+12345)%RANDOM_SYLLABLES.length]
+				+ RANDOM_SYLLABLES[randomMess + index%RANDOM_SYLLABLES.length]);
 			return { 
 				id: index,
 				head: husband ? 'gary-head' : getRandom(HEADS),
@@ -379,6 +380,9 @@ const Game = function() {
 			if (!waitUp && Keyboard.move.dy) {
 				chatIndex = Math.max(0, Math.min(3, chatIndex - Keyboard.move.dy)); //(chatIndex % 4 - Keyboard.move.dy + 4) % 4;
 				if(whoAreYou() && chatIndex===1) {
+					chatIndex = Math.max(0, Math.min(3, chatIndex - Keyboard.move.dy));
+				}
+				if(memoryLanes() && chatIndex===2) {
 					chatIndex = Math.max(0, Math.min(3, chatIndex - Keyboard.move.dy));
 				}
 				waitUp = true;
@@ -852,7 +856,7 @@ const Game = function() {
 			sprites.push(['rect',0, 0, { width: settings.size[0], height: LETTER_BOX_SIZE, zOrder: 2 }]);
 			sprites.push(['rect',0, settings.size[1] - LETTER_BOX_SIZE, { width: settings.size[0], height: LETTER_BOX_SIZE, zOrder: 2 }]);
 			sprites.push(['gun', settings.size[0] - 50, settings.size[1] - 30, { zOrder: 3}]);
-			sprites.push(['text', 10, 20, { text: "ESC TO PUT AWAY THE GUN", zOrder: 3, color: '#FFFFFF', outline: '#222222'}]);
+			sprites.push(['text', 10, 20, { text: "ESC: PUT AWAY THE GUN\nSPACE: SHOOT", zOrder: 3, color: '#FFFFFF', outline: '#222222'}]);
 
 			if(shooting(now) && !lastShot.target) {
 				sprites.push(makeBullet(lastShot, scroll));
