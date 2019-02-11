@@ -1,10 +1,12 @@
 const Game = function() {
 	const GAME_SIZE = [ 350, 250 ];
-	const WORLD_SIZE = [600,600];//[1000, 1000];
+	const WORLD_SIZE = [600, 600];//[1000, 1000];
 	const STRING_LIMIT = 30;
-	const NPC_COUNT = 20;//100;
+	const LONG_STRING_LIMIT = 45;
+	const NPC_COUNT = 14;//100;
 	const TIME_FREEZE = false;//true;
 	const SPEECH_SPEED = 30;
+	const loop = 'loop';
 
 	const RANDOM_SYLLABLES = [
 		'jo', 'ja', 'ne', 'ka', 'vi', 'dof', 'lin', 'chu', 'rat', 'be', 'do', 'nald', 'tay', 'lor', 
@@ -46,6 +48,11 @@ const Game = function() {
 	const TIME = [
 		'monday', 'weekend', 'month', 'tuesday', 'wednesday', 'thursday', 'friday', 'time',
 		'week', 'year', 'Christmas', 'time we met', "night",
+	];
+
+	const RANDOM_COMMENT = [
+		'What a fun time that was...', 'Ah the good memories...', 'Life is so short...',
+		"I'll never forget...",
 	];
 
 	function makeCap(string) {
@@ -115,18 +122,7 @@ const Game = function() {
 		backgroundColor: 'black',
 	};
 
-	const gameAudio = new Audio();
-	gameAudio.src = "spring_sprinkle.mp3";
-	gameAudio.loop = true;
-	let gameStarted = false;
-
-	function startGameMusic() {
-		gameAudio.play();
-	}
-
-	function stopGameMusic() {
-		gameAudio.stop();
-	}
+	const songs = {};
 
 	const SPEED = .5;
 	const characters = {
@@ -285,6 +281,7 @@ const Game = function() {
 		return text.split("{name}").join(name);
 	}
 
+	let parasiteCount = 0;
 	let npcs = new Array(NPC_COUNT).fill(null).map(
 		(a, index) => {
 			const move = {
@@ -293,6 +290,9 @@ const Game = function() {
 			};
 			const husband = npcHusband(index);
 			const parasite = !husband && index % 2 === 1;
+			if (parasite) {
+				parasiteCount++;
+			}
 			const gender = husband || Math.random() < .5 ? 'penis' : 'vagina';
 			const faceColor = husband ? FACE_COLORS.filter(a => a.name==="pink")[0] : getRandom(FACE_COLORS);
 			const name = makeCap(RANDOM_SYLLABLES[(randomMess + index+12345)%RANDOM_SYLLABLES.length]
@@ -315,14 +315,15 @@ const Game = function() {
 				type: husband ? 'gary' : getRandom(['npc', 'pixie', 'mad', 'smart']),
 				gender,
 				introduction: husband ? husbandIntro(gender) : wrapText(randomIntroduction(index + randomMess, name, occupation)),
-				memory: wrapTextWithLimit(husband ? husbandMemory(gender) : randomMemory(index + randomMess, parasite, name), 64),
+				memory: wrapTextWithLimit(husband ? husbandMemory(gender) : randomMemory(index + randomMess, parasite, name), LONG_STRING_LIMIT),
 				blocked: 0,
 				husband,
 				parasite,
 			};
 		}
 	);
-	const walls = {}, npcWalls = {};
+	let totalParasiteCount = parasiteCount;
+	const walls = {}, surface = {}, npcWalls = {};
 
 	const tiles = [], cols = Math.floor(WORLD_SIZE[0] / 32), rows = Math.floor(WORLD_SIZE[1] / 32);
 	for (let r = 0; r < rows; r++) {
@@ -333,15 +334,11 @@ const Game = function() {
 				getRandom([0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 			tiles.push({ type, x: c * 32 - 16, y: r * 32 - 16, frame, wall:[c,r] });
 			walls[c + "_" + r] = isWall;
+			surface[c + "_" + r] = true;
 		}
 	}
 
 	function initScene() {
-		if(!Keyboard.action.pressedOnce) {
-			Keyboard.listeners.onPressOnce = startGameMusic;
-		} else {
-			startGameMusic();
-		}
 	}
 
 	function occupy(x, y, value) {
@@ -355,7 +352,7 @@ const Game = function() {
 		const xx = Math.round(x / 32);
 		const yy = Math.round(y / 32);
 		const tag = xx+"_"+yy;
-		return walls[tag] || npcToo && npcWalls[tag];
+		return !surface[tag] || walls[tag] || npcToo && npcWalls[tag];
 	}
 
 	let npcToTalk = null;
@@ -373,6 +370,10 @@ const Game = function() {
 	let timeFreeze = TIME_FREEZE;
 	let waitUp = false;;
 	let justPutGunDown = 0;
+
+
+
+
 
 	function performActions(now) {
 
@@ -541,6 +542,8 @@ const Game = function() {
 								npcToTalk.move.dy = Math.floor(Math.random() * 3) - 1;		
 								npcToTalk.face = npcToTalk.move;	
 								talking = 0;		
+								Engine.setData('music', 'vick_n_vorty');				
+
 							}
 							break;
 						}
@@ -552,6 +555,7 @@ const Game = function() {
 			if(hero.gun) {
 				hero.gun = 0;
 				justPutGunDown = now;
+				Engine.setData('music', 'spring_sprinkle');				
 			}
 			talking = 0;
 		} else if(alreadyPressed && !Keyboard.action.down && !Keyboard.action.cancel) {
@@ -592,6 +596,63 @@ const Game = function() {
 		const SHOOTING_AREA_Y = 20;
 		let shotNpc = null;
 
+		parasites.forEach(parasite => {
+			if(now - parasite.born < 700) {
+				return;
+			}
+			{
+				const dx = hero.x - parasite.x;
+				const dy = hero.y - parasite.y;
+				const distHero = Math.sqrt(dx * dx + dy * dy);
+				if (distHero < 60) {
+					if (dx * parasite.move.dx >= 0 && dy * parasite.move.dy >= 0) {
+						parasite.move.dx = Math.floor(Math.random() * 3) - 1;
+						parasite.move.dy = Math.floor(Math.random() * 3) - 1;
+					}
+					if (dx * parasite.move.dx > 0 && dy * parasite.move.dy > 0) {
+						parasite.move.dx *= -1;
+						parasite.move.dy *= -1;
+					}
+				} else if(distHero < 100 && dx * parasite.move.dx >= 0 && dy * parasite.move.dy >= 0) {
+					parasite.move.dx = Math.floor(Math.random() * 3) - 1;
+					parasite.move.dy = Math.floor(Math.random() * 3) - 1;
+				} else if (distHero > 400) {
+					parasite.move.dx = 0;
+					parasite.move.dy = 0;					
+				}
+			}
+
+			{
+				const speed = 1;
+				let { dx, dy } = parasite.move;
+				let dist = Math.sqrt(dx * dx + dy * dy);
+				if (dist) {
+					let realDx = speed * dx / dist;
+					let realDy = speed * dy / dist;
+
+					parasite.x += realDx;
+					parasite.y += realDy;
+					if(parasite.x < 0 && dx < 0) {
+						parasite.x = 0;
+						parasite.move.dx = -dx;
+					}
+					if(parasite.x > WORLD_SIZE[0] && dx > 0) {
+						parasite.x = WORLD_SIZE[0];
+						parasite.move.dx = -dx;
+					}
+					if(parasite.y < 0 && dy < 0) {
+						parasite.y = 0;
+						parasite.move.dy = -dy;
+					}
+					if(parasite.y > WORLD_SIZE[1] && dy > 0) {
+						parasite.y = WORLD_SIZE[1];
+						parasite.move.dy = -dy;
+					}		
+				}
+			}
+
+		});
+
 		npcs.forEach(npc => {
 			if(wasShooting && !shotNpc && lastShot.target == null && !npc.husband && !npc.shot)
 			{
@@ -599,12 +660,11 @@ const Game = function() {
 				const [width, height] = settings.size;
 				let shot = false;
 				if(!dx) {	//	SHOOTING VERTICAL
-					if (Math.abs(npc.x - lastShot.x) < SHOOTING_AREA_X && onScreen(npc)) {
-//						console.log(npc.x, lastShot.x, npc.x - lastShot.x);
+					if (dy * (npc.y - lastShot.y) > 0 && Math.abs(npc.x - lastShot.x) < SHOOTING_AREA_X && onScreen(npc)) {
 						shot = now;
 					}
 				} else if(!dy) {	//	SHOOTING HORIZONTAL
-					if (Math.abs(npc.y - 16 - lastShot.y) < SHOOTING_AREA_Y && onScreen(npc)) {
+					if (dx * (npc.x - lastShot.x) > 0 && Math.abs(npc.y - 16 - lastShot.y) < SHOOTING_AREA_Y && onScreen(npc)) {
 						shot = now;
 					}
 //					console.log(npc.y, lastShot.y, npc.y - 16 - lastShot.y);
@@ -621,6 +681,15 @@ const Game = function() {
 						particles.push([dx===0 ? lastShot.x : npc.x, dy===0 ? lastShot.y : npc.y, (Math.random() -.5) * 3 + lastShot.dx, (Math.random()-.5) * 2 + lastShot.dy]);
 					}
 
+					if(npc.parasite) {
+						parasiteCount--;
+						for(let i=0; i < totalParasiteCount - parasiteCount; i++) {
+							parasites.push(
+								{ born: now, x: npc.x, y: npc.y, move: {dx: Math.random()-.5, dy: Math.random()-.5} },
+							);
+						}
+					}
+
 //					console.log(npc);
 				}
 			}
@@ -631,7 +700,7 @@ const Game = function() {
 			occupy(npc.x, npc.y, false);
 
 			//	avoid hero
-			if (hero.gun)
+			if (hero.gun && npc.blocked < 100)
 			{
 				const dx = hero.x - npc.x;
 				const dy = hero.y - npc.y;
@@ -705,7 +774,7 @@ const Game = function() {
 				if (dist) {
 					let realDx = npcSpeed * dx / dist;
 					let realDy = npcSpeed * dy / dist;
-					if (npc.blocked < 1000) {
+					if (npc.blocked < 100) {
 						if (blocked(npc.x + realDx, npc.y + realDy, true)) {
 							if (!blocked(npc.x + realDx, npc.y - realDy, true)) {
 								realDy = -realDy;
@@ -722,8 +791,13 @@ const Game = function() {
 							}
 						}
 					} else {
-						if (!blocked(npc.x + realDx, npc.y + realDy, true)) {
-							npc.blocked = false;
+						npc.move.dx = (WORLD_SIZE[0]/2 - npc.x);
+						npc.move.dy = (WORLD_SIZE[1]/2 - npc.y);
+						const dist = (npc.move.dx * npc.move.dx - npc.move.dy * npc.move.dy);
+						npc.move.dx /= dist;
+						npc.move.dy /= dist;
+						if (!blocked(npc.x + realDx, npc.y + realDy, true) && dist < 100) {
+							npc.blocked = 0;
 						}
 					}
 
@@ -887,7 +961,7 @@ const Game = function() {
 				}
 				//console.log(npcToTalk.textColor);
 				if(memoryLanes()) {
-					sprites.push(['text', 20, 40, { text, color: 'white', speechSpeed: SPEECH_SPEED, talkTime: npcToTalk.talking, zOrder: 3, outline: '#222222' }]);
+					sprites.push(['text', 20, 42, { text, color: 'white', speechSpeed: SPEECH_SPEED, talkTime: npcToTalk.talking, zOrder: 3, outline: '#222222' }]);
 				} else {
 					sprites.push(['text', settings.size[0] / 2 - Math.min(text.length, STRING_LIMIT) * 2 + hero.face.dx * 20, settings.size[1] / 2 - 30, { text, color: npcToTalk.textColor, speechSpeed: SPEECH_SPEED, talkTime: npcToTalk.talking, zOrder: 3, outline: npcToTalk.outline }]);
 				}
@@ -904,7 +978,8 @@ const Game = function() {
 			sprites.push(['rect',0, 0, { width: settings.size[0], height: LETTER_BOX_SIZE, zOrder: 2 }]);
 			sprites.push(['rect',0, settings.size[1] - LETTER_BOX_SIZE, { width: settings.size[0], height: LETTER_BOX_SIZE, zOrder: 2 }]);
 			sprites.push(['gun', settings.size[0] - 50, settings.size[1] - 30, { zOrder: 3}]);
-			sprites.push(['text', 10, 20, { text: "ESC: PUT AWAY THE GUN\nSPACE: SHOOT", zOrder: 3, color: '#FFFFFF', outline: '#222222'}]);
+			sprites.push(['text', 10, 25, { text: "ESC: PUT AWAY THE GUN\nSPACE: SHOOT", zOrder: 3, color: '#FFFFFF'}]);
+			sprites.push(['text', settings.size[0] - 40, 27, {text: parasiteCount, zOrder: 3, color: '#29b8b8', fontSize: 20}])
 
 			if(shooting(now) && !lastShot.target) {
 				sprites.push(makeBullet(lastShot, scroll));
@@ -914,8 +989,17 @@ const Game = function() {
 			sprites.push(['rect', scroll.x + particle[0], scroll.y + particle[1] - 16, { zOrder: 1, color: 'white', width: 2, height: 2 }]);
 		});
 
+		parasites.forEach(parasite => {
+			if(now - parasite.born > 700) {
+				sprites.push(['parasite-run', scroll.x + parasite.x, scroll.y + parasite.y, {animated: true }]);
+			}
+		});
+
 		return sprites;
 	}
+
+	const parasites = [
+	];
 
 	function showGun() {
 		return hero.gun || talking && chatIndex===3;
@@ -1048,6 +1132,9 @@ const Game = function() {
 				repeat: 1,
 				count: 8,
 			}],
+			['parasite-run.png', 32, 32, {
+				offset: {x:-16, y:-32}
+			}],
 			['pointer.png', 32, 32, {
 				count: 11,
 				frameRate: 60,
@@ -1100,6 +1187,9 @@ const Game = function() {
 			}],
 			['bricks.png', 32, 32, {
 			}],
+			["spring_sprinkle.mp3", 1, loop],
+			["vick_n_vorty.mp3", 1, loop],
+			["evil_vortman.mp3", 1, loop],
 		],
 		scenes: [
 			{
@@ -1108,8 +1198,10 @@ const Game = function() {
 				},
 				init: [
 					initScene,
+					[ '=>', 'music', 'spring_sprinkle' ],
 				],
 				actions: [
+					['setMusic', ['music']],
 					performActions,
 				],
 				sprites: getSprites,

@@ -143,6 +143,24 @@ const Engine = function(document, Game) {
 	}
 
 	function loadSound(src, vol, loop) {
+		const audio = new Audio();
+		audio.addEventListener('canplaythrough', e => {
+			const tag = src.split("/").pop().split(".").slice(0, -1).join("");
+            if(!loop) {
+                loop = false;
+            }
+            if(!vol) {
+                vol = 0.5;
+            }
+            audio.volume = vol;
+            audio.loop = loop;
+			addStock(tag, {
+				tag,
+				type: 'audio',
+				audio,
+			});
+		});
+		audio.src = src;
 	}
 
 	function addStock(tag, sprite) {
@@ -344,6 +362,13 @@ const Engine = function(document, Game) {
 						returnValue = !evaluate(action[1], context);
 					}
 					break;
+				case 'setMusic':
+					{
+						const song = evaluate(action[1], context);
+						setMusic(stock[song]);
+//						console.log(action, evaluate(action[1], context));
+					}
+					break;
 				default:
 					{
 						if (action.length === 1) {
@@ -358,6 +383,28 @@ const Engine = function(document, Game) {
 			}
 		}
 		return returnValue;
+	}
+
+	const playingMusic = {};
+
+	function setMusic(music) {
+		if(!music) {
+			return;
+		}
+		for(let m in playingMusic) {
+			if(m !== music.tag) {
+				if(playingMusic[m]) {
+					playingMusic[m].audio.pause();
+					delete playingMusic[m];
+				}
+			}
+		}
+		if(!playingMusic[music.tag]) {
+			playingMusic[music.tag] = music;
+		}
+		if(Keyboard.action.pressedOnce) {
+			music.audio.play();
+		}
 	}
 
 	function loadAssets(assets) {
@@ -423,7 +470,7 @@ const Engine = function(document, Game) {
 	function refresh() {
 		const now = new Date().getTime() - sceneTime;
 		renderScene(scene, now);
-//		applyEffect(now);
+//		applyEffect(Math.sin(now/100), now);
 		requestAnimationFrame(refresh);
 	}
 
@@ -586,7 +633,7 @@ const Engine = function(document, Game) {
 	}
 
 	function renderText(sprite, definition, x, y, now, option) {
-		let text = evaluate(option.text);
+		let text = "" + evaluate(option.text);
 		const speechSpeed = option.speechSpeed || 30;
 		if(option.talkTime) {
 			const dt = now - option.talkTime;
@@ -600,17 +647,34 @@ const Engine = function(document, Game) {
 				ctx.globalAlpha = option.alpha;
 			}
 			const lines = text.split('\n');
-			for(let l=0; l<lines.length; l++) {
-				if (outline) {
-					ctx.fillStyle = evaluate(outline, sprite) || 'black';
-					ctx.fillText(lines[l], +0 + x, -1 + l*10 - (lines.length/2) * 10 + y);
-					ctx.fillText(lines[l], +0 + x, +1 + l*10 - (lines.length/2) * 10 + y);
-					ctx.fillText(lines[l], -1 + x, +0 + l*10 - (lines.length/2) * 10 + y);
-					ctx.fillText(lines[l], +1 + x, +0 + l*10 - (lines.length/2) * 10 + y);
+			const fontSize = option.fontSize || 14;
+			ctx.font = fontSize + "px Arial";
+			const LINE_HEIGHT = 12;
+			if(outline) {
+			    ctx.fillStyle = evaluate(outline, sprite) || 'black';
+				for(let l=0; l<lines.length; l++) {
+					ctx.fillText(lines[l], +0 + x, -1 + l*LINE_HEIGHT - (lines.length/2) * LINE_HEIGHT + y);
+					ctx.fillText(lines[l], +0 + x, +1 + l*LINE_HEIGHT - (lines.length/2) * LINE_HEIGHT + y);
+					ctx.fillText(lines[l], -1 + x, +0 + l*LINE_HEIGHT - (lines.length/2) * LINE_HEIGHT + y);
+					ctx.fillText(lines[l], +1 + x, +0 + l*LINE_HEIGHT - (lines.length/2) * LINE_HEIGHT + y);
+
+					// ctx.fillText(lines[l], -1 + x, -1 + l*10 - (lines.length/2) * 10 + y);
+					// ctx.fillText(lines[l], -1 + x, +1 + l*10 - (lines.length/2) * 10 + y);
+					// ctx.fillText(lines[l], +1 + x, -1 + l*10 - (lines.length/2) * 10 + y);
+					// ctx.fillText(lines[l], +1 + x, +1 + l*10 - (lines.length/2) * 10 + y);
+
+					// // ctx.fillText(lines[l], +0 + x, -2 + l*10 - (lines.length/2) * 10 + y);
+					// // ctx.fillText(lines[l], +0 + x, +2 + l*10 - (lines.length/2) * 10 + y);
+					// // ctx.fillText(lines[l], -2 + x, +0 + l*10 - (lines.length/2) * 10 + y);
+					// // ctx.fillText(lines[l], +2 + x, +0 + l*10 - (lines.length/2) * 10 + y);
 				}
-				ctx.fillStyle = evaluate(color, sprite) || 'black';
-				ctx.fillText(lines[l], x, l*10 - (lines.length/2) * 10 + y);
 			}
+
+			ctx.fillStyle = evaluate(color, sprite) || 'black';
+			for(let l=0; l<lines.length; l++) {
+				ctx.fillText(lines[l], x, l*LINE_HEIGHT - (lines.length/2) * LINE_HEIGHT + y);
+			}			
+
 			if(option.alpha) {
 				ctx.globalAlpha = 1;
 			}
@@ -661,6 +725,10 @@ const Engine = function(document, Game) {
 		setScene(settings.firstScene || 0);
 	}
 
+	function setData(prop, data) {
+		evaluate(['set', prop, data]);
+	}
+
 	document.addEventListener("DOMContentLoaded", init);
 
 	return {
@@ -668,5 +736,6 @@ const Engine = function(document, Game) {
 		setDebug,
 		evaluate,
 		stock,
+		setData,
 	};
 }(document, Game);
