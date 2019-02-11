@@ -22,13 +22,16 @@ const Engine = function(document, Game) {
 
 	function onNewScene(scene) {
 		sceneData = {};
-		scene.init.forEach(a => {
-			if (typeof(a) === 'function') {
-				a(0);
-			} else {
-				evaluate(a, null);
-			}
-		});
+		sceneTime = new Date().getTime();
+		if(scene.init) {
+			scene.init.forEach(a => {
+				if (typeof(a) === 'function') {
+					a(0);
+				} else {
+					evaluate(a, null);
+				}
+			});
+		}
 	}
 
 	function onNewFrame(now) {
@@ -540,17 +543,18 @@ const Engine = function(document, Game) {
 		return list;
 	}
 
-	function clearCanvas() {
-		const { backgroundColor } = Game.settings;
+	function clearCanvas(scene) {
+		const backgroundColor = scene.backgroundColor ||  Game.settings.backgroundColor;
 		if (backgroundColor) {
-			ctx.fillStyle = backgroundColor;
+			canvas.style.backgroundColor = backgroundColor;
+//			ctx.fillStyle = backgroundColor;
 		}
 		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 	}
 
 	function renderScene(scene, now) {
 		onNewFrame(now);
-		clearCanvas();
+		clearCanvas(scene);
 		if (scene.actions) {
 			scene.actions.forEach(a => {
 				if(typeof(a)==='function') 
@@ -583,7 +587,7 @@ const Engine = function(document, Game) {
 			}
 			const [ name ] = sprite;
 			let nameCheck = evaluate(name, option);
-			if (scene.objects[nameCheck]) {
+			if (scene.objects && scene.objects[nameCheck]) {
 				const [ , xFormula, yFormula, option ] = sprite;
 				const x = evaluate(xFormula, option);
 				const y = evaluate(yFormula, option);
@@ -692,6 +696,13 @@ const Engine = function(document, Game) {
 	}
 
 	function renderImage(sprite, definition, x, y, now, option) {
+		if(option.after) {
+			const after = evaluate(option.after);
+			//console.log(now, after);
+			if(now < after) {
+				return;
+			}
+		}
 		let images = (definition.coloredImages ? definition.coloredImages[option.color] : null) || definition.images;
 		const { offset } = definition;
 		const spriteFrameRate = definition.option.frameRate || Game.settings.spriteFrameRate || 10;
@@ -709,8 +720,8 @@ const Engine = function(document, Game) {
 				frame = images.length-1;
 			}
 		}
-		const img = images[frame % images.length];
-		const [oX, oY] = offset[frameOffset % images.length];
+		const img = images[(frame % images.length + images.length) % images.length];
+		const [oX, oY] = offset[(frameOffset % images.length + images.length) % images.length];
 		const xx = Math.floor(x + oX);
 		const yy = Math.floor(y + oY);
 		const { canvas, flipCanvas } = img;

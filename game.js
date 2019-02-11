@@ -1010,7 +1010,7 @@ const Game = function() {
 			const shouldTalk = !memoryLanes() && npc.talking && now - npc.talking < lastMessage.length * SPEECH_SPEED;
 			mouth = [character['mouth'], OFFSET_X + faceDx * faceOffsetX, OFFSET_Y -26 + faceDy, {
 				animated: shouldTalk, flip: faceDx>0, animMove: moveDist,
-				frame: hero.gun || npc!==hero && (now - justPutGunDown < 2000 || showGun() || !lastKilled.parasite && now - lastKilled.time < 60000) ? (npc===hero ? 2 : npc.id % 3 + 1) : 0,
+				frame: hero.gun || npc!==hero && (justPutGunDown && now - justPutGunDown < 2000 || showGun() || !lastKilled.parasite && lastKilled.time && now - lastKilled.time < 60000) ? (npc===hero ? 2 : npc.id % 3 + 1) : 0,
 			}];
 		}
 
@@ -1363,6 +1363,17 @@ const Game = function() {
 			['the-door.png', 32, 64, {
 				offset: {x:0, y:-32},
 			}],
+			['sex.png', 320, 150, {
+				count: 4,
+				frameRate: 4,
+			}],
+			['sex-caught.png', 320, 150, {
+				count: 8,
+				frameRate: 8,
+				repeat: 1,
+			}],
+
+
 			["spring_sprinkle.mp3", 1, loop],
 			["vick_n_vorty.mp3", 1, loop],
 			["evil_vortman.mp3", 1, loop],
@@ -1408,7 +1419,20 @@ const Game = function() {
 				sprites: [
 					['text', 100, 100, {text: "testing", color: 'white'}],
 				],
-			}
+			},
+			{
+				backgroundColor: 'black',
+				init: [
+					[ '=>', 'music', 'evil_vortman' ],
+				],
+				actions: [
+					['setMusic', ['music']],
+				],
+				sprites: [
+					['sex', 0, 50, {animated: true}],
+					['sex-caught', 0, 50, {animated: true, after: 7000, animationStart: 7000}],
+				],
+			},
 		],
 	};
 }();
