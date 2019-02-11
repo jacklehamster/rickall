@@ -8,7 +8,7 @@ const Game = function() {
 	const RANDOM_SYLLABLES = [
 		'jo', 'ja', 'ne', 'ka', 'vi', 'dof', 'lin', 'chu', 'rat', 'be', 'do', 'nald', 'tay', 'lor', 
 		'ric', 'ky', 'mor', 'ty', 'jer', 'ry', 'vin', 'cent', 'liz', 'beth', 'scar', 'lett',
-		'emi', 'elvi', 'har', 'wubbalubbadubdub'
+		'emi', 'elvi', 'har', 'wubbalubbadubdub',
 	];
 
 	const randomMess = Math.floor(Math.random()*10000000);
@@ -277,10 +277,11 @@ const Game = function() {
 				dy: Math.round(2*(Math.random()-.5)),
 			};
 			const husband = npcHusband(index);
+			const parasite = !husband && index % 2 === 1;
 			const gender = husband || Math.random() < .5 ? 'penis' : 'vagina';
 			const faceColor = husband ? FACE_COLORS.filter(a => a.name==="pink")[0] : getRandom(FACE_COLORS);
 			const name = makeCap(RANDOM_SYLLABLES[(randomMess + index+12345)%RANDOM_SYLLABLES.length]
-				+ RANDOM_SYLLABLES[randomMess + index%RANDOM_SYLLABLES.length]);
+				+ RANDOM_SYLLABLES[(randomMess + index)%RANDOM_SYLLABLES.length]);
 			return { 
 				id: index,
 				head: husband ? 'gary-head' : getRandom(HEADS),
@@ -296,9 +297,10 @@ const Game = function() {
 				type: husband ? 'gary' : getRandom(['npc', 'pixie', 'mad', 'smart']),
 				gender,
 				introduction: husband ? husbandIntro(gender) : wrapText(randomIntroduction(index + randomMess, name)),
-				memory: wrapTextWithLimit(husband ? husbandMemory(gender) : randomMemory(index + randomMess, false, name), 46),
+				memory: wrapTextWithLimit(husband ? husbandMemory(gender) : randomMemory(index + randomMess, parasite, name), 46),
 				blocked: 0,
 				husband,
+				parasite,
 			};
 		}
 	);
@@ -569,7 +571,7 @@ const Game = function() {
 		let shotNpc = null;
 
 		npcs.forEach(npc => {
-			if(wasShooting && !shotNpc && lastShot.target != npc && !npc.husband)
+			if(wasShooting && !shotNpc && lastShot.target == null && !npc.husband && !npc.shot)
 			{
 				const { dx, dy } = lastShot;
 				const [width, height] = settings.size;
@@ -577,17 +579,17 @@ const Game = function() {
 				if(!dx) {	//	SHOOTING VERTICAL
 					if (Math.abs(npc.x - lastShot.x) < SHOOTING_AREA_X && onScreen(npc)) {
 //						console.log(npc.x, lastShot.x, npc.x - lastShot.x);
-						shot = true;
+						shot = now;
 					}
 				} else if(!dy) {	//	SHOOTING HORIZONTAL
 					if (Math.abs(npc.y - 16 - lastShot.y) < SHOOTING_AREA_Y && onScreen(npc)) {
-						shot = true;
+						shot = now;
 					}
 //					console.log(npc.y, lastShot.y, npc.y - 16 - lastShot.y);
 				}
 				if(shot) {
 					shotNpc = npc;
-					npc.shot = true;
+					npc.shot = now;
 					lastShot.target = npc;
 					//timeFreeze = true;
 					for(let i=0; i<10; i++) {
@@ -727,6 +729,8 @@ const Game = function() {
 
 	function getSprite(name, x, y, dx, dy, npc, now) {
 		const OFFSET_X = -16, OFFSET_Y = -32;
+
+
 		const move = npc.move;
 		const moveDist = Math.sqrt(move.dx*move.dx + move.dy*move.dy);
 		const character = characters[name];
@@ -741,7 +745,18 @@ const Game = function() {
 		let body = null;
 		let mouth = null;
 		let downThere = null;
+
+		if(npc.shot) {
+			return [
+				'group', x, y, {}, [
+					[npc.parasite ? 'parasite-exit' : 'npc-dead', OFFSET_X, OFFSET_Y, {animated: true, color: comboColor, flip: dx>0, animationStart: npc.shot }],
+				],
+			];
+		}
+
+
 		let head = [headSprite, OFFSET_X, OFFSET_Y +-26, {animated: moveDist, color: skinColor, flip: npc.husband ? faceDx>0 : false }];
+
 
 		if (!dx) {
 			if (dy < 0) {
@@ -820,8 +835,10 @@ const Game = function() {
 		sprites.push(getSprite(heroSprite, scroll.x + hero.x, scroll.y + hero.y, heroDx, heroDy, hero, now));
 
 		npcs.forEach(npc => {
-			if (onScreen(npc) && (!npc.shot || Math.random() > .8)) {
-				sprites.push(getSprite(npc.type, scroll.x + npc.x, scroll.y + npc.y, npc.move.dx, npc.move.dy, npc, now));
+			if (onScreen(npc)) {
+//				if(!npc.shot || Math.random() > .8) {
+					sprites.push(getSprite(npc.type, scroll.x + npc.x, scroll.y + npc.y, npc.move.dx, npc.move.dy, npc, now));
+//				}
 			}
 		});
 
@@ -989,6 +1006,16 @@ const Game = function() {
 			['gun.png', 32, 32, {
 			}],
 			['bullet.png', 32, 32, {
+			}],
+			['npc-dead.png', 40, 32, {
+				colors: comboColors(FACE_COLORS, BODY_COLORS),				
+				frameRate: 5,
+				repeat: 1,
+			}],
+			['parasite-exit.png', 32, 32, {
+				colors: comboColors(FACE_COLORS, BODY_COLORS),				
+				repeat: 1,
+				count: 8,
 			}],
 			['pointer.png', 32, 32, {
 				count: 11,
