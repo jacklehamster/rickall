@@ -375,7 +375,7 @@ const Game = function() {
 				return true;				
 			}
 
-			if(!canExit() && walls[tag] !== 'door') {
+			if(!canExit() && walls[tag] === 'door') {
 				return true;
 			}
 		}
