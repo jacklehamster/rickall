@@ -16,7 +16,8 @@ const Keyboard = function() {
   	dx: 0,
   	dy: 0,
   };
-  const action = { down: false };
+  const listeners = { onPressOnce: null, };
+  const action = { pressedOnce: false, down: false };
   function onKey(e) {
     switch(e.keyCode) {
       case KEY_LEFT: case KEY_RIGHT: case KEY_UP: case KEY_DOWN:
@@ -34,6 +35,13 @@ const Keyboard = function() {
         action.cancel = e.type === 'keyup' ? 0 : 1;
         e.preventDefault();
         break;
+    }
+    if(!action.pressedOnce) {
+      action.pressedOnce = true;
+    }
+    if(listeners.onPressOnce) {
+      listeners.onPressOnce();
+      listeners.onPressOnce = null;
     }
   }
 
@@ -61,5 +69,6 @@ const Keyboard = function() {
   	keyboard,
   	move,
     action,
+    listeners,
   };	
 }();

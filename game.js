@@ -319,7 +319,11 @@ const Game = function() {
 	}
 
 	function initScene() {
-		startGameMusic();
+		if(!Keyboard.action.pressedOnce) {
+			Keyboard.listeners.onPressOnce = startGameMusic;
+		} else {
+			startGameMusic();
+		}
 	}
 
 	function occupy(x, y, value) {
