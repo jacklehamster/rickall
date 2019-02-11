@@ -1,4 +1,5 @@
 const Game = function() {
+	const GAME_SIZE = [ 350, 250 ];
 	const WORLD_SIZE = [600,600];//[1000, 1000];
 	const STRING_LIMIT = 30;
 	const NPC_COUNT = 20;//100;
@@ -28,7 +29,8 @@ const Game = function() {
 		'at the airport', 'in the library', "in your dad's garage",
 		"at the Marriot", "at the police station", "at the convention center",
 		"on the airplane", "at the concert", "in the car",
-		"with your friends", "in front of everybody",
+		"with your friends", "in front of everybody", "in Vietnam", "at the hospital",
+		"in my dreams",
 	];
 
 	const HOBBY = [
@@ -38,26 +40,27 @@ const Game = function() {
 		'lasagna', 'pasta', 'Korean food', "a joint", "drugs",
 		"a sandwich", "ice cream", "tiramisu", "too much drinks",
 		"discovered something amazing", 'the Impossible Burger',
-		'fifty donuts',
+		'fifty donuts', "a thing",
 	];
 
 	const TIME = [
 		'monday', 'weekend', 'month', 'tuesday', 'wednesday', 'thursday', 'friday', 'time',
-		'week', 'year', 'Christmas', 'time we met',
+		'week', 'year', 'Christmas', 'time we met', "night",
 	];
 
 	function makeCap(string) {
 		return string.charAt(0).toUpperCase() + string.substr(1).toLowerCase();
 	}
 
-	function randomIntroduction(id, name) {
+	function randomIntroduction(id, name, occupation) {
 		return "You don't recognize me? I am " 
 			+ name
 			+ " your "
-			+ OCCUPATIONS[(id+323)%OCCUPATIONS.length]
+			+ occupation
 			+ ". We had " + HOBBY[(id +3333)%HOBBY.length] + " last "
 			+ TIME[(id + 13131) % TIME.length] + " "
-			+ LOCATIONS[(id + 37)%LOCATIONS.length] + ".";
+			+ LOCATIONS[(id + 37)%LOCATIONS.length] + ". "
+			+ RANDOM_COMMENT[(id + 9999) % RANDOM_COMMENT.length];
 	}
 
 	const GOOD_MEMORIES = [
@@ -87,22 +90,28 @@ const Game = function() {
 			"I don't recognize half the people in this room.",
 		].map(wrapText),
 		"justKilled": [
-			"Who would have thought that was a parasite?",
+			"Who would have thought {name} was a parasite?",
 			"Nice job eliminating that parasite.",
 			"You're pretty smart figuring out who's the parasite.",
 			"I knew that was a parasite. That looked definitely suspicious.",
+			"I remember all the good times with {name}. Who would have thought those were fake!",
+			"Isn't weird, I can't recall anything I disliked about {name}.",
 		].map(wrapText),
 		"justKilledHuman": [
 			"Hey careful where you point that gun.",
 			"Everyone can make mistakes.",
 			"Those parasites, they mess with our minds to turn.",
+			"I can't believe you killed your {occupation}.",
+			"{name} wasn't a parasite! You knew each other since forever!",
+			"Nice job cowboy. Maybe you think everyone's a parasite.",
+			"{name} will be missed.",
 		].map(wrapText),
 		"lastOne": [
 		].map(wrapText),
 	};
 
 	const settings = {
-		size: [ 250, 250 ],
+		size: GAME_SIZE,
 		backgroundColor: 'black',
 	};
 
@@ -252,6 +261,12 @@ const Game = function() {
 	];
 	const NUDE = BODY_COLORS[2];
 
+	let lastKilled = {
+		time: 0,
+		npc: null,
+		parasite: false,
+	};
+
 	function npcHusband(index) {
 		return index === 1;
 	}
@@ -282,8 +297,11 @@ const Game = function() {
 			const faceColor = husband ? FACE_COLORS.filter(a => a.name==="pink")[0] : getRandom(FACE_COLORS);
 			const name = makeCap(RANDOM_SYLLABLES[(randomMess + index+12345)%RANDOM_SYLLABLES.length]
 				+ RANDOM_SYLLABLES[(randomMess + index)%RANDOM_SYLLABLES.length]);
+			const occupation = OCCUPATIONS[(randomMess + index+323)%OCCUPATIONS.length];
 			return { 
 				id: index,
+				name,
+				occupation,
 				head: husband ? 'gary-head' : getRandom(HEADS),
 				skinColor: faceColor.name,
 				textColor: '#' + (faceColor[0xFFFFFF] + 0xF000000).toString(16).substr(1),
@@ -296,8 +314,8 @@ const Game = function() {
 				lookAtHero: { dx: 0, dy: 0},
 				type: husband ? 'gary' : getRandom(['npc', 'pixie', 'mad', 'smart']),
 				gender,
-				introduction: husband ? husbandIntro(gender) : wrapText(randomIntroduction(index + randomMess, name)),
-				memory: wrapTextWithLimit(husband ? husbandMemory(gender) : randomMemory(index + randomMess, parasite, name), 46),
+				introduction: husband ? husbandIntro(gender) : wrapText(randomIntroduction(index + randomMess, name, occupation)),
+				memory: wrapTextWithLimit(husband ? husbandMemory(gender) : randomMemory(index + randomMess, parasite, name), 64),
 				blocked: 0,
 				husband,
 				parasite,
@@ -506,7 +524,7 @@ const Game = function() {
 								}
 							}
 							break;
-							case 2: // MEMORY LANES
+							case 2: // MEMORY LANE
 							{
 								if (!memoryLanes()) {
 									discussionTopic = "MEMORY";
@@ -592,6 +610,9 @@ const Game = function() {
 //					console.log(npc.y, lastShot.y, npc.y - 16 - lastShot.y);
 				}
 				if(shot) {
+					lastKilled.time = now;
+					lastKilled.npc = npc;
+					lastKilled.parasite = npc.parasite;
 					shotNpc = npc;
 					npc.shot = now;
 					lastShot.target = npc;
@@ -784,7 +805,7 @@ const Game = function() {
 			const shouldTalk = !memoryLanes() && npc.talking && now - npc.talking < lastMessage.length * SPEECH_SPEED;
 			mouth = [character['mouth'], OFFSET_X + faceDx * faceOffsetX, OFFSET_Y -26 + faceDy, {
 				animated: shouldTalk, flip: faceDx>0, animMove: moveDist,
-				frame: hero.gun || npc!==hero && (now - justPutGunDown < 2000 || showGun()) ? (npc===hero ? 2 : npc.id % 3 + 1) : 0,
+				frame: hero.gun || npc!==hero && (now - justPutGunDown < 2000 || showGun() || !lastKilled.parasite && now - lastKilled.time < 60000) ? (npc===hero ? 2 : npc.id % 3 + 1) : 0,
 			}];
 		}
 
@@ -856,8 +877,14 @@ const Game = function() {
 			sprites.push(['rect',0, 0, { width: settings.size[0], height: LETTER_BOX_SIZE, zOrder: 1 }]);
 			sprites.push(['rect',0, settings.size[1] - LETTER_BOX_SIZE, { width: settings.size[0], height: LETTER_BOX_SIZE, zOrder: 1 }]);
 			if(npcToTalk && npcToTalk.talking) {
-				const text = memoryLanes() ? npcToTalk.memory : whoAreYou() ? npcToTalk.introduction : npcToTalk.husband ? "I've missed you" : HOT_TOPICS.normal[npcToTalk.id % HOT_TOPICS.normal.length]; //'Greetings. What can I do for you?';
+				const killed = (now - lastKilled.time) < 60000 ? lastKilled.npc : null;
+				const topics = !killed ? HOT_TOPICS.normal : killed.parasite ? HOT_TOPICS.justKilled : HOT_TOPICS.justKilledHuman;
+				let text = memoryLanes() ? npcToTalk.memory : whoAreYou() ? npcToTalk.introduction : npcToTalk.husband ? "I've missed you" 
+				: topics[npcToTalk.id % topics.length]; //'Greetings. What can I do for you?';
 				lastMessage = text;
+				if (killed) {
+					text = text.split("{name}").join(killed.name).split("{occupation}").join(killed.occupation);
+				}
 				//console.log(npcToTalk.textColor);
 				if(memoryLanes()) {
 					sprites.push(['text', 20, 40, { text, color: 'white', speechSpeed: SPEECH_SPEED, talkTime: npcToTalk.talking, zOrder: 3, outline: '#222222' }]);
