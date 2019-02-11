@@ -261,7 +261,7 @@ const Game = function() {
 	}
 
 	function husbandMemory(gender) {
-		return wrapText("You remember the day you said 'I do.' to Sleepy Gary, your lovely husband. He showed up at the ceremony in his usual pyjamas, having forgotten that day. This is a cherrished memory you'll always remember.");
+		return wrapText("You remember the day you said 'I do.' to Sleepy Gary, your lovely husband. Gary forgot that day so he showed up at the ceremony in pyjamas, a cherished moment you will always remember.");
 	}
 
 	function randomMemory(index, good, name) {
