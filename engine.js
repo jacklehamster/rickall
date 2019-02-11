@@ -365,7 +365,7 @@ const Engine = function(document, Game) {
 				case 'setMusic':
 					{
 						const song = evaluate(action[1], context);
-						setMusic(stock[song]);
+						setMusic(song ? stock[song] : null);
 //						console.log(action, evaluate(action[1], context));
 					}
 					break;
@@ -388,17 +388,18 @@ const Engine = function(document, Game) {
 	const playingMusic = {};
 
 	function setMusic(music) {
-		if(!music) {
-			return;
-		}
 		for(let m in playingMusic) {
-			if(m !== music.tag) {
+			if(!music || m !== music.tag) {
 				if(playingMusic[m]) {
 					playingMusic[m].audio.pause();
 					delete playingMusic[m];
 				}
 			}
 		}
+		if(!music) {
+			return;
+		}
+
 		if(!playingMusic[music.tag]) {
 			playingMusic[music.tag] = music;
 		}
@@ -449,6 +450,11 @@ const Engine = function(document, Game) {
 		resizeCanvas(canvas);
 	}
 
+	function nextScene() {
+		const { scenes } = Game;
+		setScene(scenes.indexOf(scene) + 1);
+	}
+
 	function setScene(index) {
 		const { scenes } = Game;
 		let newScene;
@@ -470,7 +476,10 @@ const Engine = function(document, Game) {
 	function refresh() {
 		const now = new Date().getTime() - sceneTime;
 		renderScene(scene, now);
-//		applyEffect(Math.sin(now/100), now);
+		const fadeTime = evaluate(scene.fadeStart, null);
+		if(fadeTime) {
+			applyEffect((now - fadeTime) / 2000, now);
+		}
 		requestAnimationFrame(refresh);
 	}
 
@@ -491,7 +500,7 @@ const Engine = function(document, Game) {
 		const data = imgData.data;
 		for (let i=0; i < data.length; i++) {
 			if(Math.random()< fade) {
-				data[i] = 0xFF;
+				data[i] = 0;//0xFF;
 			}			
 		}
 		ctx2.putImageData(imgData, 0, 0);
@@ -519,7 +528,7 @@ const Engine = function(document, Game) {
 			list.length = 0;
 		}
 		if (!sprites || !sprites.length) {
-			return;
+			return list;
 		}
 		sprites.forEach(sprite => {
 			sprite = evaluate(sprite, null);
@@ -737,5 +746,6 @@ const Engine = function(document, Game) {
 		evaluate,
 		stock,
 		setData,
+		nextScene,
 	};
 }(document, Game);
