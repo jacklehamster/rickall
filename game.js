@@ -1,5 +1,6 @@
 const Game = function() {
-	const GAME_SIZE = [ 350, 250 ];
+	const BACKGROUND_COLOR = "#121622";
+	const GAME_SIZE = [ 320, 256 ];
 	const WORLD_SIZE = [600, 600];//[1000, 1000];
 	const STRING_LIMIT = 30;
 	const LONG_STRING_LIMIT = 45;
@@ -119,7 +120,7 @@ const Game = function() {
 
 	const settings = {
 		size: GAME_SIZE,
-		backgroundColor: 'black',
+		backgroundColor: BACKGROUND_COLOR,
 	};
 
 	const songs = {};
