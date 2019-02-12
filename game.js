@@ -1377,6 +1377,10 @@ const Game = function() {
 			["spring_sprinkle.mp3", 1, loop],
 			["vick_n_vorty.mp3", 1, loop],
 			["evil_vortman.mp3", 1, loop],
+			["parasite_die.wav", 1],
+			["laser.wav", 1],
+			["ui_yes.wav", 1],
+			["ui_no.wav", 1],
 		],
 		scenes: [
 			{
