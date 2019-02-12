@@ -611,6 +611,7 @@ const Game = function() {
 			if(!alreadyPressed && Keyboard.action.down) {
 				if (hero.gun) {
 					lastShot.time = now;
+					Engine.playSound('laser');
 					lastShot.target = null;
 					lastShot.dx = hero.face.dx;
 					lastShot.dy = lastShot.dx ? 0 : (hero.face.dy || 1);
@@ -673,7 +674,6 @@ const Game = function() {
 									npcToTalk.face = npcToTalk.move;	
 									talking = 0;		
 									Engine.setData('music', 'vick_n_vorty');				
-
 								}
 								break;
 							}
@@ -801,6 +801,7 @@ const Game = function() {
 //					console.log(npc.y, lastShot.y, npc.y - 16 - lastShot.y);
 				}
 				if(shot) {
+					Engine.playSound('parasite_die');
 					lastKilled.time = now;
 					lastKilled.npc = npc;
 					lastKilled.parasite = npc.parasite;
@@ -1378,7 +1379,7 @@ const Game = function() {
 			["vick_n_vorty.mp3", 1, loop],
 			["evil_vortman.mp3", 1, loop],
 			["parasite_die.wav", 1],
-			["laser.wav", 1],
+			["laser.wav", 0.4],
 			["ui_yes.wav", 1],
 			["ui_no.wav", 1],
 		],

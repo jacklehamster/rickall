@@ -411,6 +411,13 @@ const Engine = function(document, Game) {
 		}
 	}
 
+	function playSound(sound) {
+		const sfx = sound ? stock[sound] : null;
+		if (sfx) {
+			sfx.audio.play();
+		}
+	}
+
 	function loadAssets(assets) {
 		assets.filter(asset => asset[0].split(".").pop()==='png')
 			.forEach(asset => {
@@ -758,5 +765,6 @@ const Engine = function(document, Game) {
 		stock,
 		setData,
 		nextScene,
+		playSound,
 	};
 }(document, Game);
