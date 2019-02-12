@@ -1,7 +1,7 @@
 const Game = function() {
 	const DEBUG = {
 		canExit: true,
-		shortExit: true,
+//		shortExit: true,
 	};
 
 	const BACKGROUND_COLOR = "#121622";
