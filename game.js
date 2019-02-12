@@ -1,8 +1,13 @@
 const Game = function() {
+	const DEBUG = {
+		canExit: true,
+		shortExit: true,
+	};
+
 	const BACKGROUND_COLOR = "#121622";
 	const GAME_SIZE = [ 320, 256 ];
 	const WORLD_SIZE = [600, 600];//[1000, 1000];
-	const STRING_LIMIT = 28;
+	const STRING_LIMIT = 29;
 	const LONG_STRING_LIMIT = 45;
 	const NPC_COUNT = 14;//100;
 	const TIME_FREEZE = false;//true;
@@ -353,6 +358,9 @@ const Game = function() {
 	}
 
 	function canExit() {
+		if (DEBUG.canExit) {
+			return true;
+		}
 		return inHallway || parasiteCount===0;
 	}
 
@@ -412,15 +420,166 @@ const Game = function() {
 	let justPutGunDown = 0;
 
 	let inHallway = false;
+	let inFinal = false;
+	let inFinalFinal = false;
 
-	function finalScene(now) {
+	let skipOnce = false;
+
+	function finalfinalScene(now) {
+		skipOnce = true;
+		console.log('finalfinal');
+//		Engine.previousScene(now);
 		Engine.nextScene(now);
+		hero.x = 544;//WORLD_SIZE[0]/2+16;
+		hero.y = 224;//WORLD_SIZE[1]/2;
+
+
 		tiles.length = 0;
 		exitedTheBuilding = 0;
-		console.log('finalScene');
+		npcs.length = 0;
+		hero.gun = now;
+		inFinal = true;
+		inFinalFinal = true;
+		talking = 0;
+		npcToTalk.talking = 0;
+//		talking = true;
+//		console.log('finalScene');
+
+		scroll.x = (settings.size[0] / 2 - hero.x + (hero.gun ? - hero.face.dx * 70 : talking && npcToTalk ? - hero.face.dx * 20 : 0));
+		scroll.y = (settings.size[1] / 2 - hero.y + (hero.gun ? - hero.face.dy * 60 + 30 : talking && npcToTalk ? 40 : 20));
+
+		const COLS = 15, ROWS = 6;
+		for(let r=0; r < ROWS; r++) {
+			for(let c = -1; c < COLS; c++) {
+				const isDoor = false;//c === Math.floor(COLS/2) && r === 1;
+				const isWall = c<0 || c === COLS-1 || r<=1 || r===ROWS-1
+					|| c >= 2 && r != 2;
+				const type = !isWall ? 'floor-tile' : 'bricks';
+				const frame = type==='floor-tile' ? getRandom([0, 1, 2, 3, 3, 3, 3, 3, 3, 3, 3]) : 
+					getRandom([0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+				const col = Math.floor(hero.x / 32 + c);
+				const row = Math.floor(hero.y / 32 + r - ROWS + 2);
+//				tiles.push({ type, x: col * 32 - 16, y: row * 32 - 16, frame });
+				walls[col + "_" + row] = isDoor ? 'door' : isWall ? type : null;
+				surface[col + "_" + row] = type;
+			}
+		}
+		tiles.push({ type:'moonlight', x: (WORLD_SIZE[0]/2+16) - 72, y: (WORLD_SIZE[1]/2)- 320});
+
+		const husband = true;
+		const parasite = false;
+		const gender = 'penis';
+		const faceColor = FACE_COLORS.filter(a => a.name==="pink")[0];
+		const name = 'Sleepy Gary';
+		const occupation = 'husband';
+		const move = { dx: 0, dy: 0};
+
+		npcs.push(npcToTalk = { 
+			id: 0,
+			name,
+			occupation,
+			head: 'gary-head',
+			skinColor: faceColor.name,
+			textColor: '#' + (faceColor[0xFFFFFF] + 0xF000000).toString(16).substr(1),
+			outline: faceColor.outline || '#222222',
+			bodyColor: 'gary',
+			x: 715, 
+			y: 224,
+			move,
+			face: move,
+			lookAtHero: { dx: -1, dy: 0},
+			type: 'gary',
+			gender,
+			introduction: husbandIntro(gender),
+			memory: wrapTextWithLimit(husbandMemory(gender), LONG_STRING_LIMIT),
+			blocked: 0,
+			husband,
+			parasite,
+		});		
+		window.gary = npcToTalk;
+
+
+
+		// FINALCHATS = [
+		// 	"You're right Sleepy Gary. You really are... human.",
+		// 	"--1-",
+		// 	"--2-",
+		// 	"--3-",
+		// 	"--4-",
+		// ].map(wrapText);
+
+
+
 	}
 
-	function nextScene(now) {
+	function finalScene(now) {
+		skipOnce = true;
+		Engine.nextScene(now);
+		hero.x = WORLD_SIZE[0]/2+16;
+		hero.y = WORLD_SIZE[1]/2;
+		tiles.length = 0;
+		exitedTheBuilding = 0;
+		npcs.length = 0;
+		hero.gun = now;
+		inFinal = true;
+//		console.log('finalScene');
+
+		scroll.x = (settings.size[0] / 2 - hero.x + (hero.gun ? - hero.face.dx * 70 : talking && npcToTalk ? - hero.face.dx * 20 : 0));
+		scroll.y = (settings.size[1] / 2 - hero.y + (hero.gun ? - hero.face.dy * 60 + 30 : talking && npcToTalk ? 40 : 20));
+
+		const COLS = 15, ROWS = 6;
+		for(let r=0; r < ROWS; r++) {
+			for(let c = -1; c < COLS; c++) {
+				const isDoor = false;//c === Math.floor(COLS/2) && r === 1;
+				const isWall = c<0 || c === COLS-1 || r<=1 || r===ROWS-1
+					|| c >= 2 && r != 2;
+				const type = !isWall ? 'floor-tile' : 'bricks';
+				const frame = type==='floor-tile' ? getRandom([0, 1, 2, 3, 3, 3, 3, 3, 3, 3, 3]) : 
+					getRandom([0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+				const col = Math.floor(hero.x / 32 + c);
+				const row = Math.floor(hero.y / 32 + r - ROWS + 2);
+//				tiles.push({ type, x: col * 32 - 16, y: row * 32 - 16, frame });
+				walls[col + "_" + row] = isDoor ? 'door' : isWall ? type : null;
+				surface[col + "_" + row] = type;
+			}
+		}
+		tiles.push({ type:'moonlight', x: (WORLD_SIZE[0]/2+16) - 72, y: (WORLD_SIZE[1]/2)- 320});
+
+
+		const husband = true;
+		const parasite = false;
+		const gender = 'penis';
+		const faceColor = FACE_COLORS.filter(a => a.name==="pink")[0];
+		const name = 'Sleepy Gary';
+		const occupation = 'husband';
+		const move = { dx: 0, dy: 0};
+
+		npcs.push(npcToTalk = { 
+			id: 0,
+			name,
+			occupation,
+			head: 'gary-head',
+			skinColor: faceColor.name,
+			textColor: '#' + (faceColor[0xFFFFFF] + 0xF000000).toString(16).substr(1),
+			outline: faceColor.outline || '#222222',
+			bodyColor: 'gary',
+			x: 715, 
+			y: 224,
+			move,
+			face: move,
+			lookAtHero: { dx: -1, dy: 0},
+			type: 'gary',
+			gender,
+			introduction: husbandIntro(gender),
+			memory: wrapTextWithLimit(husbandMemory(gender), LONG_STRING_LIMIT),
+			blocked: 0,
+			husband,
+			parasite,
+		});
+	}
+
+	function secondScene(now) {
+		skipOnce = true;
 		Engine.nextScene(now);
 		hero.x = WORLD_SIZE[0]/2+16;
 		hero.y = WORLD_SIZE[1]/2;
@@ -430,7 +589,7 @@ const Game = function() {
 		tiles.length = 0;
 		exitedTheBuilding = 0;
 
-		const COLS = 7, ROWS = 30;
+		const COLS = 7, ROWS = DEBUG.shortExit ? 5 :30;
 		for(let r=0; r < ROWS; r++) {
 			for(let c = 0; c < COLS; c++) {
 				const isDoor = c === Math.floor(COLS/2) && r === 1;
@@ -456,11 +615,236 @@ const Game = function() {
 		}
 	}
 
+	function performActions5(now) {
+		hero.move.dy = 0;
+		hero.move.dx = 0;
+
+		if(!talking) {
+			talking = now;
+			hero.move.dx = 0;
+			hero.move.dy = 0;
+			hero.face = {
+				dx: hero.x < npcToTalk.x ? 1 : hero.x > npcToTalk.x ? -1 : 0, dy: 0,
+			};
+			npcToTalk.face = npcToTalk.lookAtHero;
+			npcToTalk.lookAtHero.dx = hero.x < npcToTalk.x ? -1 : hero.x > npcToTalk.x ? 1 : 0;
+			npcToTalk.lookAtHero.dy = 0;
+			chatIndex = 0;
+			discussionTopic = null;
+			waitUp = false;
+			finalChat = 0;
+			chatIndex = 3;
+		} else {
+
+			if(!talking || !npcToTalk) {
+				npcToTalk = null;
+			} else {
+				if(now - talking > 1000 && !npcToTalk.talking) {
+					npcToTalk.talking = now;
+				}//console.log(Keyboard.move.dy);
+				//inFinalfinal
+
+				if (!waitUp && Keyboard.move.dy) {
+					chatIndex = Math.max(0, Math.min(3, chatIndex - Keyboard.move.dy)); //(chatIndex % 4 - Keyboard.move.dy + 4) % 4;
+//						console.log(chatIndex);
+					waitUp = true;
+				} else if(!Keyboard.move.dy) {
+					waitUp = false;
+				}
+
+			}
+
+		}
+
+
+
+		if(!alreadyPressed && Keyboard.action.down) {
+			{
+				if(npcToTalk) {
+//					talking = talking ? 0 : now;
+					if(!talking) {
+					} else if (finalChat < FINALCHATS_NEXT) {
+						npcToTalk.talking = 0;
+						finalChat ++;
+						chatIndex = 3;
+					} else {
+						npcToTalk.talking = 0;
+						finalChat ++;
+						chatIndex = 3;
+						// goExit(now);
+					}
+				}
+			}
+			alreadyPressed = true;
+		} else if(!alreadyPressed && Keyboard.action.cancel) {
+			if(hero.gun) {
+				hero.gun = 0;
+				justPutGunDown = now;
+				Engine.setData('music', 'spring_sprinkle');				
+			}
+			talking = 0;
+		} else if(alreadyPressed && !Keyboard.action.down && !Keyboard.action.cancel) {
+			alreadyPressed = false;
+		}
+	}
+
+	function performActions4(now) {
+		if(exitedTheBuilding && now - exitedTheBuilding > 2000 ) {
+			finalfinalScene(now);
+		}
+		if(!exitedTheBuilding && now > 20000) {
+			goExit(now);
+		}
+	}
+
+	function performActions3(now) {
+		if(exitedTheBuilding && now - exitedTheBuilding > 2000 ) {
+			finalScene(now);
+		}
+
+
+		const scrollGx = (settings.size[0] / 2 - hero.x + (hero.gun ? - hero.face.dx * 70 : talking && npcToTalk ? - hero.face.dx * 20 : 0));
+		const scrollGy = (settings.size[1] / 2 - hero.y + (hero.gun ? - hero.face.dy * 60 + 30 : talking && npcToTalk ? 40 : 20));
+		if (Math.abs(scrollGx - scroll.x) < 1) {
+			scroll.x = scrollGx;
+		} else {
+			scroll.x += (scrollGx - scroll.x) / 10;
+		}
+		if (Math.abs(scrollGy - scroll.y) < 1) {
+			scroll.y = scrollGy;
+		} else {
+			scroll.y += (scrollGy - scroll.y) / 10;
+		}
+
+		if(!exitedTheBuilding && hero.x / 32 < 17) {
+
+			if (Keyboard.move.dx != hero.move.dx || Keyboard.move.dy != hero.move.dy) {
+				const { dx, dy } = Keyboard.move;
+				hero.move.dx = dx;
+				hero.move.dy = dy;
+			}
+
+			const { dx, dy } = hero.move;
+			const { face } = hero;
+
+			if(dx || dy) {
+				face.dx = dx;
+				face.dy = dy;
+			}
+
+			window.hero = hero;
+
+			const dist = Math.sqrt(dx * dx + dy * dy);
+			if (dist) {
+				let heroSpeed = shooting(now) ? 0 :  SPEED * 2 * (hero.gun || now - justPutGunDown ? 2 : 1);
+				let realDx = heroSpeed * dx / dist;
+				let realDy = heroSpeed * dy / dist;
+				if (blocked(hero.x + realDx, hero.y + realDy)) {
+					if (!blocked(hero.x + heroSpeed * dx, hero.y)) {
+
+						if(Math.floor(hero.y / 32) < 7) {
+//							hero.x += heroSpeed * dx;
+						}
+					} else if(!blocked(hero.x, hero.y + heroSpeed * dy)) {
+						if(Math.floor(hero.y / 32) >= 7) {
+//							hero.y += heroSpeed * dy;
+						}
+					} else {
+
+					}
+				} else {
+					if(hero.y / 32 <= 7) {
+						hero.x += realDx;
+					}
+					if(hero.y / 32 > 7) {
+						hero.y += realDy;
+					} else {
+						hero.y = 7 * 32;
+					}
+				}
+			}
+		} else if(!exitedTheBuilding) {
+			hero.move.dy = 0;
+			hero.move.dx = 0;
+
+			if(!talking) {
+				talking = now;
+				hero.move.dx = 0;
+				hero.move.dy = 0;
+				hero.face = {
+					dx: hero.x < npcToTalk.x ? 1 : hero.x > npcToTalk.x ? -1 : 0, dy: 0,
+				};
+				npcToTalk.face = npcToTalk.lookAtHero;
+				npcToTalk.lookAtHero.dx = hero.x < npcToTalk.x ? -1 : hero.x > npcToTalk.x ? 1 : 0;
+				npcToTalk.lookAtHero.dy = 0;
+				chatIndex = 0;
+				discussionTopic = null;
+				waitUp = false;
+				finalChat = 0;
+				chatIndex = 3;
+			} else {
+
+				if(!talking || !npcToTalk) {
+					npcToTalk = null;
+				} else {
+					if(now - talking > 1000 && !npcToTalk.talking) {
+						npcToTalk.talking = now;
+					}//console.log(Keyboard.move.dy);
+
+					if (!waitUp && Keyboard.move.dy) {
+						chatIndex = Math.max(0, Math.min(3, chatIndex - Keyboard.move.dy)); //(chatIndex % 4 - Keyboard.move.dy + 4) % 4;
+//						console.log(chatIndex);
+						waitUp = true;
+					} else if(!Keyboard.move.dy) {
+						waitUp = false;
+					}
+
+				}
+
+			}
+
+
+
+			if(!alreadyPressed && Keyboard.action.down) {
+				{
+					if(npcToTalk) {
+	//					talking = talking ? 0 : now;
+						if(!talking) {
+						} else if (finalChat < FINALCHATS_NEXT) {
+							npcToTalk.talking = 0;
+							finalChat ++;
+							chatIndex = 3;
+						} else {
+							npcToTalk.talking = 0;
+							finalChat ++;
+							chatIndex = 3;
+							goExit(now);
+						}
+					}
+				}
+				alreadyPressed = true;
+			} else if(!alreadyPressed && Keyboard.action.cancel) {
+				if(hero.gun) {
+					hero.gun = 0;
+					justPutGunDown = now;
+					Engine.setData('music', 'spring_sprinkle');				
+				}
+				talking = 0;
+			} else if(alreadyPressed && !Keyboard.action.down && !Keyboard.action.cancel) {
+				alreadyPressed = false;
+			}
+
+		}
+	}
+
+
+	let finalChat = 0;
+
 	function performActions2(now) {
 		// if(!hero.gun) {
 		// 	hero.gun = now;
 		// }
-		if(exitedTheBuilding && now - exitedTheBuilding > 3000 ) {
+		if(exitedTheBuilding && now - exitedTheBuilding > 2000 ) {
 			finalScene(now);
 		}
 
@@ -478,38 +862,40 @@ const Game = function() {
 			scroll.y += (scrollGy - scroll.y) / 10;
 		}
 
-		if (Keyboard.move.dx != hero.move.dx || Keyboard.move.dy != hero.move.dy) {
-			const { dx, dy } = Keyboard.move;
-			hero.move.dx = dx;
-			hero.move.dy = dy;
-		}
+		if(!exitedTheBuilding) {
+			if (Keyboard.move.dx != hero.move.dx || Keyboard.move.dy != hero.move.dy) {
+				const { dx, dy } = Keyboard.move;
+				hero.move.dx = dx;
+				hero.move.dy = dy;
+			}
 
-		const { dx, dy } = hero.move;
-		const { face } = hero;
+			const { dx, dy } = hero.move;
+			const { face } = hero;
 
-		if(dx || dy) {
-			face.dx = dx;
-			face.dy = dy;
-		}
+			if(dx || dy) {
+				face.dx = dx;
+				face.dy = dy;
+			}
 
-		const dist = Math.sqrt(dx * dx + dy * dy);
-		if (dist) {
-			let heroSpeed = shooting(now) ? 0 :  SPEED * 2 * (hero.gun || now - justPutGunDown ? 2 : 1);
-			let realDx = heroSpeed * dx / dist;
-			let realDy = heroSpeed * dy / dist;
-			if (blocked(hero.x + realDx, hero.y + realDy)) {
-				if (!blocked(hero.x + heroSpeed * dx, hero.y)) {
-					hero.x += heroSpeed * dx;
-				} else if(!blocked(hero.x, hero.y + heroSpeed * dy)) {
-					hero.y += heroSpeed * dy;
+			const dist = Math.sqrt(dx * dx + dy * dy);
+			if (dist) {
+				let heroSpeed = shooting(now) ? 0 :  SPEED * 2 * (hero.gun || now - justPutGunDown ? 2 : 1);
+				let realDx = heroSpeed * dx / dist;
+				let realDy = heroSpeed * dy / dist;
+				if (blocked(hero.x + realDx, hero.y + realDy)) {
+					if (!blocked(hero.x + heroSpeed * dx, hero.y)) {
+						hero.x += heroSpeed * dx;
+					} else if(!blocked(hero.x, hero.y + heroSpeed * dy)) {
+						hero.y += heroSpeed * dy;
+					} else {
+
+					}
 				} else {
-
-				}
-			} else {
-				hero.x += realDx;
-				hero.y += realDy;
-				if(exiting(hero.x, hero.y)) {
-					goExit(now);
+					hero.x += realDx;
+					hero.y += realDy;
+					if(exiting(hero.x, hero.y)) {
+						goExit(now);
+					}
 				}
 			}
 		}
@@ -519,9 +905,9 @@ const Game = function() {
 		// if(!hero.gun) {
 		// 	hero.gun = now;
 		// }
-		if(exitedTheBuilding && now - exitedTheBuilding > 3000 && !inHallway) {
+		if(exitedTheBuilding && now - exitedTheBuilding > 2000 && !inHallway) {
 			Engine.setData('music', null);
-			nextScene(now);
+			secondScene(now);
 		}
 
 
@@ -933,7 +1319,6 @@ const Game = function() {
 						}
 					}
 
-
 					npc.x += realDx;
 					npc.y += realDy;
 					if(npc.x < 0 && dx < 0) {
@@ -1011,7 +1396,7 @@ const Game = function() {
 			const shouldTalk = !memoryLanes() && npc.talking && now - npc.talking < lastMessage.length * SPEECH_SPEED;
 			mouth = [character['mouth'], OFFSET_X + faceDx * faceOffsetX, OFFSET_Y -26 + faceDy, {
 				animated: shouldTalk, flip: faceDx>0, animMove: moveDist,
-				frame: hero.gun || npc!==hero && (justPutGunDown && now - justPutGunDown < 2000 || showGun() || !lastKilled.parasite && lastKilled.time && now - lastKilled.time < 60000) ? (npc===hero ? 2 : npc.id % 3 + 1) : 0,
+				frame: inFinal ? 2 : (hero.gun || npc!==hero && (justPutGunDown && now - justPutGunDown < 2000 || showGun() || !lastKilled.parasite && lastKilled.time && now - lastKilled.time < 60000) ? (npc===hero ? 2 : npc.id % 3 + 1) : 0),
 			}];
 		}
 
@@ -1060,7 +1445,11 @@ const Game = function() {
 	const sprites = [];
 	function getSprites(now) {
 		sprites.length = 0;
-		if(!exitedTheBuilding) {
+		if(skipOnce) {
+			skipOnce = false;
+			return sprites;
+		}
+		if(!exitedTheBuilding || inFinal) {
 			const heroSprite = shooting(now) ? 'gunshooting' : showGun() ? 'gun' : 'hero';
 			const heroDx = hero.face.dx;
 			const heroDy = hero.face.dy;
@@ -1078,7 +1467,7 @@ const Game = function() {
 		});
 
 		tiles.forEach(tile => {
-			if (onScreen(tile)) {
+			if (onScreen(tile) || inFinal) {
 				if(tile.door === 'opened') {
 					if(canExit()) {
 						sprites.push([tile.type, scroll.x + tile.x, scroll.y + tile.y, {animated: false, frame: tile.frame}]);
@@ -1094,12 +1483,15 @@ const Game = function() {
 		});
 		if (talking && npcToTalk) {
 			const LETTER_BOX_SIZE = Math.min(70, (now - talking) / 8);
-			sprites.push(['rect',0, 0, { width: settings.size[0], height: LETTER_BOX_SIZE, zOrder: 1 }]);
+			if(!inFinal) {
+				sprites.push(['rect',0, 0, { width: settings.size[0], height: LETTER_BOX_SIZE, zOrder: 1 }]);
+			}
 			sprites.push(['rect',0, settings.size[1] - LETTER_BOX_SIZE, { width: settings.size[0], height: LETTER_BOX_SIZE, zOrder: 1 }]);
 			if(npcToTalk && npcToTalk.talking) {
 				const killed = (now - lastKilled.time) < 60000 ? lastKilled.npc : null;
 				const topics = !killed ? HOT_TOPICS.normal : killed.parasite ? HOT_TOPICS.justKilled : HOT_TOPICS.justKilledHuman;
-				let text = memoryLanes() ? npcToTalk.memory : whoAreYou() ? npcToTalk.introduction : npcToTalk.husband ? "I've missed you" 
+				let text = memoryLanes() ? npcToTalk.memory : whoAreYou() ? npcToTalk.introduction : npcToTalk.husband ? (inFinal?
+					FINALCHATS[finalChat]:"Remember our vacation?") 
 				: topics[npcToTalk.id % topics.length]; //'Greetings. What can I do for you?';
 				lastMessage = text;
 				if (killed) {
@@ -1109,17 +1501,23 @@ const Game = function() {
 				if(memoryLanes()) {
 					sprites.push(['text', 20, 42, { text, color: 'white', speechSpeed: SPEECH_SPEED, talkTime: npcToTalk.talking, zOrder: 3, outline: '#222222' }]);
 				} else {
-					sprites.push(['text', settings.size[0] / 2 - Math.min(text.length, STRING_LIMIT) * 2 + hero.face.dx * 20 - 10, settings.size[1] / 2 - 30, { text, color: npcToTalk.textColor, speechSpeed: SPEECH_SPEED, talkTime: npcToTalk.talking, zOrder: 3, outline: npcToTalk.outline }]);
+					sprites.push(['text', 
+						- (inFinalFinal ? 30 : 0) +
+						settings.size[0] / 2 - Math.min(text.length, STRING_LIMIT) * 2 + hero.face.dx * 20 - 10, settings.size[1] / 2 - 30, { text, color: npcToTalk.textColor, speechSpeed: SPEECH_SPEED, talkTime: npcToTalk.talking, zOrder: 3, outline: npcToTalk.outline }]);
 				}
 			
 				const shouldTalk = npcToTalk.talking && now - npcToTalk.talking < lastMessage.length * SPEECH_SPEED;
 				if(npcToTalk.talking && !shouldTalk) {
 //					sprites.push(['gun', settings.size[0] - 50, settings.size[1] - 40, { size: [20,20], zOrder: 3}]);
-					sprites.push(getMenu(now));
+					if(!inFinal) {
+						sprites.push(getMenu(now));
+					} else if(finalChat !== FINALCHATS_NEXT && !inFinalFinal) {
+						sprites.push(getFinalMenu(now));
+					}
 				}
 			}
 		}
-		if (hero.gun) {
+		if (hero.gun && !inFinal && !inHallway) {
 			const LETTER_BOX_SIZE = Math.min(30, (now - hero.gun) / 8);
 			sprites.push(['rect',0, 0, { width: settings.size[0], height: LETTER_BOX_SIZE, zOrder: 2 }]);
 			sprites.push(['rect',0, settings.size[1] - LETTER_BOX_SIZE, { width: settings.size[0], height: LETTER_BOX_SIZE, zOrder: 2 }]);
@@ -1145,6 +1543,23 @@ const Game = function() {
 	}
 
 
+	const FINALCHATS_NEXT = 3;
+
+	//finalChat
+
+
+
+	let FINALCHATS = [
+		"I don't care what's happening out there. You and I, we're going to survive this.",
+		"Wait, can you be so sure that I'm a parasite? After all we've been through together.",
+		"Oh please don't kill me. You must have a bad memory of me hidden somewhere.",
+		"No! Wait! There's this one time... you know... please try to remember...",
+		"--1-",
+		"--2-",
+		"--3-",
+		"--4-",
+	].map(wrapText);
+
 	function getSprites2(now) {
 		sprites.length = 0;
 		const heroSprite = shooting(now) ? 'gunshooting' : showGun() ? 'gun' : 'hero';
@@ -1169,6 +1584,9 @@ const Game = function() {
 				}
 			}
 		});
+
+
+
 		return sprites;
 	}	
 
@@ -1194,6 +1612,54 @@ const Game = function() {
 	}
 
 	let chatIndex = 0;
+
+	const FINALMENUS = [
+		[
+			['text', 20, -15, { text: "I know I'll survive this. Don't know about you.", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+			['text', 20, 0, { text: "You're a parasite, Sleepy Gary.", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+			['text', 20, 15, { text: "Sleepy Gary, you've been a bad, bad boy.", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+			['text', 20, 30, { text: 'Goodbye Spleepy Gary. I will miss you.', speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+		],
+		[
+			['text', 20, -15, { text: "Parasites can't implant bad memories.", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+			['text', 20, 0, { text: "I don't have a single bad memory of you.", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+			['text', 20, 15, { text: "You are my best memories, Sleepy Gary.", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+			['text', 20, 30, { text: "You're too good to be real, Sleepy Gary.", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+		],
+		[
+			['text', 20, -15, { text: "That nice vacation on our yatch?", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+			['text', 20, 0, { text: "That memorable wedding?", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+			['text', 20, 15, { text: "Our first kiss?", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+			['text', 20, 30, { text: 'Our ménage à trois with Jerry?', speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+		],
+		[
+			['text', 20, -15, { text: "1---", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+			['text', 20, 0, { text: "---", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+			['text', 20, 15, { text: "---", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+			['text', 20, 30, { text: '---', speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+		],
+		[
+			['text', 20, -15, { text: "2---", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+			['text', 20, 0, { text: "---", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+			['text', 20, 15, { text: "---", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+			['text', 20, 30, { text: '---', speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+		],
+		[
+			['text', 20, -15, { text: "3---", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+			['text', 20, 0, { text: "---", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+			['text', 20, 15, { text: "---", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+			['text', 20, 30, { text: '---', speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+		],
+	];
+
+
+	function getFinalMenu(now) {
+		return [
+			'group', 20, settings.size[1] - 35, { zOrder: 3}, FINALMENUS[finalChat]
+				.concat([['pointer', -16, 8 - chatIndex * 15, { animated: false, frame: 5 }]]),
+		];
+	}
+
 
 	function getMenu(now) {
 		return [
@@ -1235,6 +1701,20 @@ const Game = function() {
 			});
 		});
 		return colors;
+	}
+
+	function getFinalSprites() {
+		if(skipOnce) {
+			skipOnce = false;
+			return [];
+		}
+		return [
+			['sex', 0, 50, {animated: true}],
+			['sex-caught', 0, 50, {animated: true, after: 7000, animationStart: 7000}],
+			['text', 20, 42, { text: "Sleepy Gary! how could you?           \n\nAnd with...              YOU.", color: '#cccccc', speechSpeed: 100, talkTime: 11000, zOrder: 3, outline: '#222222' }],
+
+		];
+
 	}
 
 	const WALK_ANIM_OFFSET = [
@@ -1373,6 +1853,7 @@ const Game = function() {
 				frameRate: 8,
 				repeat: 1,
 			}],
+			['moonlight.png'],
 
 
 			["spring_sprinkle.mp3", 1, loop],
@@ -1410,9 +1891,10 @@ const Game = function() {
 					['setMusic', ['music']],
 					performActions2,
 				],
-				sprites: getSprites2,
+				sprites: getSprites,
 			},
 			{
+				fadeStart: ['exitTime'],
 				objects: {
 				},
 				init: [
@@ -1420,12 +1902,37 @@ const Game = function() {
 				],
 				actions: [
 					['setMusic', ['music']],
+					performActions3,
 				],
-				sprites: [
-					['text', 100, 100, {text: "testing", color: 'white'}],
-				],
+				sprites: getSprites,
 			},
 			{
+				fadeStart: ['exitTime'],
+				backgroundColor: 'black',
+				init: [
+					[ '=>', 'music', 'evil_vortman' ],
+				],
+				actions: [
+					['setMusic', ['music']],
+					performActions4,
+				],
+				sprites: getFinalSprites,
+			},
+			{
+				fadeStart: ['exitTime'],
+				objects: {
+				},
+				init: [
+					[ '=>', 'music', 'evil_vortman' ],
+				],
+				actions: [
+					['setMusic', ['music']],
+					performActions5,
+				],
+				sprites: getSprites,
+			},			
+			{
+				fadeStart: ['exitTime'],
 				backgroundColor: 'black',
 				init: [
 					[ '=>', 'music', 'evil_vortman' ],
@@ -1433,11 +1940,8 @@ const Game = function() {
 				actions: [
 					['setMusic', ['music']],
 				],
-				sprites: [
-					['sex', 0, 50, {animated: true}],
-					['sex-caught', 0, 50, {animated: true, after: 7000, animationStart: 7000}],
-				],
 			},
+
 		],
 	};
 }();

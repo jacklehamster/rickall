@@ -20,6 +20,7 @@ const Engine = function(document, Game) {
 		},
 	};
 
+	let skipOneFrame = false;
 	function onNewScene(scene) {
 		sceneData = {};
 		sceneTime = new Date().getTime();
@@ -32,6 +33,7 @@ const Engine = function(document, Game) {
 				}
 			});
 		}
+		skipOneFrame = true;
 	}
 
 	function onNewFrame(now) {
@@ -465,6 +467,11 @@ const Engine = function(document, Game) {
 		setScene(scenes.indexOf(scene) + 1);
 	}
 
+	function previousScene() {
+		const { scenes } = Game;
+		setScene(scenes.indexOf(scene) - 1);
+	}
+
 	function setScene(index) {
 		const { scenes } = Game;
 		let newScene;
@@ -484,11 +491,19 @@ const Engine = function(document, Game) {
 	}
 
 	function refresh() {
+		if(skipOneFrame) {
+			skipOneFrame = false;
+			requestAnimationFrame(refresh);
+			return;
+		}
 		const now = new Date().getTime() - sceneTime;
 		renderScene(scene, now);
 		const fadeTime = evaluate(scene.fadeStart, null);
+		// if(!fadeTime && now < 100) {
+		// 	console.log(now, scene);
+		// }
 		if(fadeTime) {
-			applyEffect((now - fadeTime) / 2000, now);
+			applyEffect((now - fadeTime) / 1000, now);
 		}
 		requestAnimationFrame(refresh);
 	}
@@ -504,16 +519,15 @@ const Engine = function(document, Game) {
 
 
 	function applyEffect(fade, now) {
-		let ctx2 = ctx.canvas.getContext('2d', {alpha: false});
-		const { width, height } = ctx2.canvas;
-		const imgData = ctx2.getImageData(0, 0, width, height);
+		const { width, height } = ctx.canvas;
+		const imgData = ctx.getImageData(0, 0, width, height);
 		const data = imgData.data;
 		for (let i=0; i < data.length; i++) {
 			if(Math.random()< fade) {
 				data[i] = 0;//0xFF;
 			}			
 		}
-		ctx2.putImageData(imgData, 0, 0);
+		ctx.putImageData(imgData, 0, 0);
 	}
 
 	function setDebug(div) {
@@ -592,6 +606,7 @@ const Engine = function(document, Game) {
 			if (!sprite) {
 				return;
 			}
+			window.lastSprite = sprite;
 			const [ name ] = sprite;
 			let nameCheck = evaluate(name, option);
 			if (scene.objects && scene.objects[nameCheck]) {
@@ -712,7 +727,7 @@ const Engine = function(document, Game) {
 		}
 		let images = (definition.coloredImages ? definition.coloredImages[option.color] : null) || definition.images;
 		const { offset } = definition;
-		const spriteFrameRate = definition.option.frameRate || Game.settings.spriteFrameRate || 10;
+		const spriteFrameRate = option.frameRate || definition.option.frameRate || Game.settings.spriteFrameRate || 10;
 		const timeStart = option.animationStart ? evaluate(option.animationStart, option) : 0;
 		const timeFrame = Math.floor((now - timeStart) / 1000 * spriteFrameRate);
 		let frame = evaluate(option.animated, option) ? timeFrame : (option.frame || 0);
@@ -766,5 +781,6 @@ const Engine = function(document, Game) {
 		setData,
 		nextScene,
 		playSound,
+		previousScene,
 	};
 }(document, Game);
