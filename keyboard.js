@@ -9,6 +9,7 @@ const Keyboard = function() {
   const KEY_D = 68;
   const KEY_Q = 81;
   const KEY_E = 69;
+  const KEY_ENTER = 13;
   const KEY_SPACE = 32;
   const KEY_ESCAPE = 27;
   const keyboard = [];
@@ -28,6 +29,7 @@ const Keyboard = function() {
         e.preventDefault();
         break;
       case KEY_SPACE:
+      case KEY_ENTER:
         action.down = e.type === 'keyup' ? 0 : 1;
         e.preventDefault();
         break;

@@ -4,7 +4,7 @@ const Game = function() {
 //		shortExit: true,
 	};
 
-	const BACKGROUND_COLOR = "#121622";
+	const BACKGROUND_COLOR = "black";//"#121622";
 	const GAME_SIZE = [ 320, 256 ];
 	const WORLD_SIZE = [600, 600];//[1000, 1000];
 	const STRING_LIMIT = 29;
@@ -296,6 +296,115 @@ const Game = function() {
 	}
 
 	let parasiteCount = 0;
+
+	let totalParasiteCount = parasiteCount;
+	const walls = {}, surface = {}, npcWalls = {};
+
+	const blocks = {};
+	const blocks_ = [
+		'1_2',
+		'1_3',
+		'1_4',
+		'1_5',
+		'2_2',
+		'3_2',
+		'4_2',
+		'5_2',
+		'6_2',
+		'7_2',
+		'8_2',
+		'9_2',
+		'9_3',
+		'9_4',
+		'9_5',
+		'9_6',
+		'9_7',
+		'10_7',
+		'10_6',
+		'10_5',
+		'10_4',
+		'10_3',
+		'10_2',
+		'11_7',
+		'11_6',
+		'11_5',
+		'11_4',
+		'11_3',
+		'11_2',
+		'13_2',
+
+//		'12_6',
+		'13_6',
+		'14_6',
+		'15_5',
+		'16_5',
+		'15_6',
+		'16_6',
+		'17_6',
+		'18_6',
+
+		'14_2',
+		'15_2',
+		'16_2',
+		'22_2',
+		'22_3',
+		'22_4',
+		'22_5',
+		'22_6',
+		'22_7',
+		'23_2',
+		'23_3',
+		'23_4',
+		'23_5',
+		'23_6',
+		'23_7',
+		'24_2',
+		'24_3',
+		'24_4',
+		'24_5',
+		'24_6',
+		'24_7',
+		'25_2',
+		'25_2',
+		'26_2',
+		'27_2',
+		'28_2',
+		'29_2',
+		'30_2',
+		'31_2',
+		'31_3',
+		'31_4',
+		'31_5',
+		'31_6',
+	].forEach(a => blocks[a] = true);
+
+	const freeSpaces = [];
+
+	const tiles = [], cols = /*Math.floor(WORLD_SIZE[0] / 32)*/ 33, rows = 11;//Math.floor(WORLD_SIZE[1] / 32);
+	for (let r = 0; r < rows; r++) {
+		for (let c = 0; c < cols; c++) {
+			const isDoor = r===1 && c===Math.round(cols/2) + 4;
+			const isWall = c===0 || r<=1 || c===cols-1 || r===rows-1 || blocks[c+"_"+r];
+			const type = !isWall ? 'floor-tile' : 'bricks';
+			const frame = type==='floor-tile' ? getRandom([0, 1, 2, 3, 3, 3, 3, 3, 3, 3, 3]) : 
+				getRandom([0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+//			tiles.push({ type, x: c * 32 - 16, y: r * 32 - 16, frame, alpha: .3 });
+			if(!isWall) {
+				freeSpaces.push({x: c * 32 - 16, y: r * 32 - 16});
+			}
+			if(isDoor) {
+				tiles.push({ type: 'the-door', x: c * 32 - 16, y: r * 32 - 16, frame:1, door:'closed', });
+				tiles.push({ type: 'the-door', x: c * 32 - 16, y: r * 32 - 16, frame:0, door:'opened', });
+			}
+			walls[c + "_" + r] = isDoor ? 'door' : isWall ? type : null;
+			surface[c + "_" + r] = type;
+		}
+	}
+	// Engine.setData('back', {x:-100,y:-150});
+	tiles.push({ type: 'house-background', x: ['back.x'], y: ['back.y'], alwaysOnScreen: true });
+	tiles.push({ type: 'couch', x: ['couch.x'], y: ['couch.y'], alwaysOnScreen: true });
+
+
 	let npcs = new Array(NPC_COUNT).fill(null).map(
 		(a, index) => {
 			const move = {
@@ -303,7 +412,7 @@ const Game = function() {
 				dy: Math.round(2*(Math.random()-.5)),
 			};
 			const husband = npcHusband(index);
-			const parasite = !husband && index % 2 === 1;
+			const parasite = !husband && index % 3 === 1;
 			if (parasite) {
 				parasiteCount++;
 			}
@@ -312,6 +421,12 @@ const Game = function() {
 			const name = makeCap(RANDOM_SYLLABLES[(randomMess + index+12345)%RANDOM_SYLLABLES.length]
 				+ RANDOM_SYLLABLES[(randomMess + index)%RANDOM_SYLLABLES.length]);
 			const occupation = OCCUPATIONS[(randomMess + index+323)%OCCUPATIONS.length];
+
+			const posIndex = Math.floor(Math.random() * freeSpaces.length);
+			const {x, y} = freeSpaces[posIndex];
+			freeSpaces[posIndex] = freeSpaces[freeSpaces.length-1];
+			freeSpaces.pop();
+
 			return { 
 				id: index,
 				name,
@@ -321,8 +436,8 @@ const Game = function() {
 				textColor: '#' + (faceColor[0xFFFFFF] + 0xF000000).toString(16).substr(1),
 				outline: faceColor.outline || '#222222',
 				bodyColor: husband ? 'gary' : index>=NPC_COUNT * .9 ? NUDE.name : getRandom(BODY_COLORS.slice(0, BODY_COLORS.length - 2)).name,
-				x: 100 + Math.random()*(WORLD_SIZE[0]-200), 
-				y: 100 + Math.random()*(WORLD_SIZE[1]-200),
+				x, 
+				y,
 				move,
 				face: move,
 				lookAtHero: { dx: 0, dy: 0},
@@ -336,26 +451,7 @@ const Game = function() {
 			};
 		}
 	);
-	let totalParasiteCount = parasiteCount;
-	const walls = {}, surface = {}, npcWalls = {};
 
-	const tiles = [], cols = Math.floor(WORLD_SIZE[0] / 32), rows = Math.floor(WORLD_SIZE[1] / 32);
-	for (let r = 0; r < rows; r++) {
-		for (let c = 0; c < cols; c++) {
-			const isDoor = r===1 && c===Math.round(cols/2);
-			const isWall = c===0 || r<=1 || c===cols-1 || r===rows-1;
-			const type = !isWall ? 'floor-tile' : 'bricks';
-			const frame = type==='floor-tile' ? getRandom([0, 1, 2, 3, 3, 3, 3, 3, 3, 3, 3]) : 
-				getRandom([0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-			tiles.push({ type, x: c * 32 - 16, y: r * 32 - 16, frame });
-			if(isDoor) {
-				tiles.push({ type: 'the-door', x: c * 32 - 16, y: r * 32 - 16, frame:1, door:'closed', });
-				tiles.push({ type: 'the-door', x: c * 32 - 16, y: r * 32 - 16, frame:0, door:'opened', });
-			}
-			walls[c + "_" + r] = isDoor ? 'door' : isWall ? type : null;
-			surface[c + "_" + r] = type;
-		}
-	}
 
 	function canExit() {
 		if (DEBUG.canExit) {
@@ -397,8 +493,15 @@ const Game = function() {
 		return walls[tag] === 'door' && canExit();
 	}
 
+	let exited = false;;
 	let exitedTheBuilding = 0;
 	function goExit(now) {
+//		exited = true;
+		try {
+			throw new Error();
+		}catch(e) {
+			console.log(e);
+		}
 		exitedTheBuilding = now;
 		Engine.setData('exitTime', now);
 	}
@@ -433,15 +536,16 @@ const Game = function() {
 		hero.x = 544;//WORLD_SIZE[0]/2+16;
 		hero.y = 224;//WORLD_SIZE[1]/2;
 
-
 		tiles.length = 0;
 		exitedTheBuilding = 0;
+		exited = false;
 		npcs.length = 0;
 		hero.gun = now;
 		inFinal = true;
 		inFinalFinal = true;
 		talking = 0;
 		npcToTalk.talking = 0;
+//		hero.talking = now;
 //		talking = true;
 //		console.log('finalScene');
 
@@ -519,6 +623,7 @@ const Game = function() {
 		hero.y = WORLD_SIZE[1]/2;
 		tiles.length = 0;
 		exitedTheBuilding = 0;
+		exited = false;
 		npcs.length = 0;
 		hero.gun = now;
 		inFinal = true;
@@ -588,6 +693,7 @@ const Game = function() {
 		parasites.length = 0;
 		tiles.length = 0;
 		exitedTheBuilding = 0;
+		exited = false;
 
 		const COLS = 7, ROWS = DEBUG.shortExit ? 5 :30;
 		for(let r=0; r < ROWS; r++) {
@@ -632,7 +738,7 @@ const Game = function() {
 			chatIndex = 0;
 			discussionTopic = null;
 			waitUp = false;
-			finalChat = 0;
+			finalChat = 5;
 			chatIndex = 3;
 		} else {
 
@@ -689,6 +795,9 @@ const Game = function() {
 	}
 
 	function performActions4(now) {
+		if(inFinalFinal || exited) {
+			return;
+		}
 		if(exitedTheBuilding && now - exitedTheBuilding > 2000 ) {
 			finalfinalScene(now);
 		}
@@ -1022,46 +1131,49 @@ const Game = function() {
 							chatIndex = 0;
 							discussionTopic = null;
 						} else {
+							let shouldTalk = npcToTalk.talking && now - npcToTalk.talking < lastMessage.length * SPEECH_SPEED;
 
-							switch(chatIndex) {
-								case 0: // GOODBYE
-								{
-									discussionTopic = null;
-									npcToTalk.move.dx = Math.floor(Math.random() * 3) - 1;
-									npcToTalk.move.dy = Math.floor(Math.random() * 3) - 1;		
-									npcToTalk.face = npcToTalk.move;	
-									talking = 0;		
-								}
-								break;
-								case 1: // WHO ARE YOU?
-								{
-									if (!whoAreYou()) {
-										discussionTopic = "WHO_ARE_YOU";
-										npcToTalk.talking = 0;
-										chatIndex = 0;
+							if(!shouldTalk) {
+								switch(chatIndex) {
+									case 0: // GOODBYE
+									{
+										discussionTopic = null;
+										npcToTalk.move.dx = Math.floor(Math.random() * 3) - 1;
+										npcToTalk.move.dy = Math.floor(Math.random() * 3) - 1;		
+										npcToTalk.face = npcToTalk.move;	
+										talking = 0;		
 									}
-								}
-								break;
-								case 2: // MEMORY LANE
-								{
-									if (!memoryLanes()) {
-										discussionTopic = "MEMORY";
-										npcToTalk.talking = 0;
-										chatIndex = 0;
+									break;
+									case 1: // WHO ARE YOU?
+									{
+										if (!whoAreYou()) {
+											discussionTopic = "WHO_ARE_YOU";
+											npcToTalk.talking = 0;
+											chatIndex = 0;
+										}
 									}
+									break;
+									case 2: // MEMORY LANE
+									{
+										if (!memoryLanes()) {
+											discussionTopic = "MEMORY";
+											npcToTalk.talking = 0;
+											chatIndex = 0;
+										}
+									}
+									break;
+									case 3: // GUN
+									{
+										discussionTopic = null;
+										hero.gun = now;
+										npcToTalk.move.dx = Math.floor(Math.random() * 3) - 1;
+										npcToTalk.move.dy = Math.floor(Math.random() * 3) - 1;		
+										npcToTalk.face = npcToTalk.move;	
+										talking = 0;		
+										Engine.setData('music', 'vick_n_vorty');				
+									}
+									break;
 								}
-								break;
-								case 3: // GUN
-								{
-									discussionTopic = null;
-									hero.gun = now;
-									npcToTalk.move.dx = Math.floor(Math.random() * 3) - 1;
-									npcToTalk.move.dy = Math.floor(Math.random() * 3) - 1;		
-									npcToTalk.face = npcToTalk.move;	
-									talking = 0;		
-									Engine.setData('music', 'vick_n_vorty');				
-								}
-								break;
 							}
 						}
 					}
@@ -1147,25 +1259,74 @@ const Game = function() {
 					let realDx = speed * dx / dist;
 					let realDy = speed * dy / dist;
 
+					// parasite.x += realDx;
+					// parasite.y += realDy;
+
+
+					if (parasite.blocked < 100) {
+						if (blocked(parasite.x + realDx, parasite.y + realDy, true)) {
+							if (!blocked(parasite.x + parasite, parasite.y - realDy, true)) {
+								realDy = -realDy;
+								parasite.move.dy = -dy;
+								parasite.blocked++;
+							} else if(!blocked(parasite.x - realDx, parasite.y + realDy, true)) {
+								realDx = -realDx;
+								parasite.move.dx = -dx;
+								parasite.blocked++;
+							} else {
+								parasite.move.dx = -dx;
+								parasite.move.dy = -dy;
+								parasite.blocked++;
+							}
+						}
+					} else {
+						parasite.move.dx = (WORLD_SIZE[0]/2 - parasite.x);
+						parasite.move.dy = (WORLD_SIZE[1]/2 - parasite.y);
+						const dist = (parasite.move.dx * parasite.move.dx - parasite.move.dy * parasite.move.dy);
+						parasite.move.dx /= dist;
+						parasite.move.dy /= dist;
+						if (!blocked(parasite.x + realDx, parasite.y + realDy, true) && dist < 100) {
+							parasite.blocked = 0;
+						}
+					}
+
 					parasite.x += realDx;
 					parasite.y += realDy;
-					if(parasite.x < 0 && dx < 0) {
-						parasite.x = 0;
-						parasite.move.dx = -dx;
-					}
-					if(parasite.x > WORLD_SIZE[0] && dx > 0) {
-						parasite.x = WORLD_SIZE[0];
-						parasite.move.dx = -dx;
-					}
-					if(parasite.y < 0 && dy < 0) {
-						parasite.y = 0;
-						parasite.move.dy = -dy;
-					}
-					if(parasite.y > WORLD_SIZE[1] && dy > 0) {
-						parasite.y = WORLD_SIZE[1];
-						parasite.move.dy = -dy;
-					}		
+					// if(npc.x < 0 && dx < 0) {
+					// 	npc.x = 0;
+					// 	npc.move.dx = -dx;
+					// }
+					// if(npc.x > WORLD_SIZE[0] && dx > 0) {
+					// 	npc.x = WORLD_SIZE[0];
+					// 	npc.move.dx = -dx;
+					// }
+					// if(npc.y < 0 && dy < 0) {
+					// 	npc.y = 0;
+					// 	npc.move.dy = -dy;
+					// }
+					// if(npc.y > WORLD_SIZE[1] && dy > 0) {
+					// 	npc.y = WORLD_SIZE[1];
+					// 	npc.move.dy = -dy;
+					// }		
 				}
+
+					// if(parasite.x < 0 && dx < 0) {
+					// 	parasite.x = 0;
+					// 	parasite.move.dx = -dx;
+					// }
+					// if(parasite.x > WORLD_SIZE[0] && dx > 0) {
+					// 	parasite.x = WORLD_SIZE[0];
+					// 	parasite.move.dx = -dx;
+					// }
+					// if(parasite.y < 0 && dy < 0) {
+					// 	parasite.y = 0;
+					// 	parasite.move.dy = -dy;
+					// }
+					// if(parasite.y > WORLD_SIZE[1] && dy > 0) {
+					// 	parasite.y = WORLD_SIZE[1];
+					// 	parasite.move.dy = -dy;
+					// }		
+				// }
 			}
 
 		});
@@ -1199,14 +1360,14 @@ const Game = function() {
 						particles.push([dx===0 ? lastShot.x : npc.x, dy===0 ? lastShot.y : npc.y, (Math.random() -.5) * 3 + lastShot.dx, (Math.random()-.5) * 2 + lastShot.dy]);
 					}
 
-					if(npc.parasite) {
-						parasiteCount--;
-						for(let i=0; i < totalParasiteCount - parasiteCount; i++) {
-							parasites.push(
-								{ born: now, x: npc.x, y: npc.y, move: {dx: Math.random()-.5, dy: Math.random()-.5} },
-							);
-						}
-					}
+					// if(npc.parasite) {
+					// 	parasiteCount--;
+					// 	for(let i=0; i < totalParasiteCount - parasiteCount; i++) {
+					// 		parasites.push(
+					// 			{ born: now, x: npc.x, y: npc.y, move: {dx: Math.random()-.5, dy: Math.random()-.5} },
+					// 		);
+					// 	}
+					// }
 
 //					console.log(npc);
 				}
@@ -1321,22 +1482,22 @@ const Game = function() {
 
 					npc.x += realDx;
 					npc.y += realDy;
-					if(npc.x < 0 && dx < 0) {
-						npc.x = 0;
-						npc.move.dx = -dx;
-					}
-					if(npc.x > WORLD_SIZE[0] && dx > 0) {
-						npc.x = WORLD_SIZE[0];
-						npc.move.dx = -dx;
-					}
-					if(npc.y < 0 && dy < 0) {
-						npc.y = 0;
-						npc.move.dy = -dy;
-					}
-					if(npc.y > WORLD_SIZE[1] && dy > 0) {
-						npc.y = WORLD_SIZE[1];
-						npc.move.dy = -dy;
-					}		
+					// if(npc.x < 0 && dx < 0) {
+					// 	npc.x = 0;
+					// 	npc.move.dx = -dx;
+					// }
+					// if(npc.x > WORLD_SIZE[0] && dx > 0) {
+					// 	npc.x = WORLD_SIZE[0];
+					// 	npc.move.dx = -dx;
+					// }
+					// if(npc.y < 0 && dy < 0) {
+					// 	npc.y = 0;
+					// 	npc.move.dy = -dy;
+					// }
+					// if(npc.y > WORLD_SIZE[1] && dy > 0) {
+					// 	npc.y = WORLD_SIZE[1];
+					// 	npc.move.dy = -dy;
+					// }		
 				}
 			}
 			occupy(npc.x, npc.y, true);
@@ -1390,10 +1551,23 @@ const Game = function() {
 			}
 		}
 
-		if (dy >= 0 || npc.husband) {
+		if (dy >= 0 || npc.husband || inFinalFinal && npc===hero) {
 			const faceOffsetX = dy===0 ? (faceDx < 0 ? 4 : 5) : (faceDx < 0 ? 1 : 2);
 			face = [character['face'], OFFSET_X + faceDx * faceOffsetX, OFFSET_Y -26 + faceDy, {animated: true, animMove: moveDist, flip: faceDx>0}];
-			const shouldTalk = !memoryLanes() && npc.talking && now - npc.talking < lastMessage.length * SPEECH_SPEED;
+			let shouldTalk = !memoryLanes() && npc.talking && now - npc.talking < lastMessage.length * SPEECH_SPEED;
+			
+			if(inFinalFinal) {
+				if(FINALCHATS[finalChat][1]) {
+					shouldTalk = shouldTalk && npc === hero;
+					if(shouldTalk && !hero.talking) {
+						hero.talking = now;
+						console.log("HERE", hero.talking);
+					}
+				} else {
+					shouldTalk = shouldTalk && npc.type==='gary'
+				}
+			}
+
 			mouth = [character['mouth'], OFFSET_X + faceDx * faceOffsetX, OFFSET_Y -26 + faceDy, {
 				animated: shouldTalk, flip: faceDx>0, animMove: moveDist,
 				frame: inFinal ? 2 : (hero.gun || npc!==hero && (justPutGunDown && now - justPutGunDown < 2000 || showGun() || !lastKilled.parasite && lastKilled.time && now - lastKilled.time < 60000) ? (npc===hero ? 2 : npc.id % 3 + 1) : 0),
@@ -1424,6 +1598,7 @@ const Game = function() {
 
 	const SPRITE_SIZE = 32;
 	function onScreen(object) {
+		if(object.alwaysOnScreen) return true;
 		const [ width, height ] = settings.size;
 		return object.x + scroll.x > -SPRITE_SIZE && object.x + scroll.x < width + SPRITE_SIZE && object.y + scroll.y > -SPRITE_SIZE && object.y + scroll.y < height + SPRITE_SIZE * 2;
 	}
@@ -1467,17 +1642,19 @@ const Game = function() {
 		});
 
 		tiles.forEach(tile => {
+			const x = Engine.evaluate(tile.x);
+			const y = Engine.evaluate(tile.y);
 			if (onScreen(tile) || inFinal) {
 				if(tile.door === 'opened') {
 					if(canExit()) {
-						sprites.push([tile.type, scroll.x + tile.x, scroll.y + tile.y, {animated: false, frame: tile.frame}]);
+						sprites.push([tile.type, scroll.x + x, scroll.y + y, {animated: false, frame: tile.frame, alpha: tile.alpha}]);
 					}
 				} else if(tile.door === 'closed') {
 					if(!canExit()) {
-						sprites.push([tile.type, scroll.x + tile.x, scroll.y + tile.y, {animated: false, frame: tile.frame}]);						
+						sprites.push([tile.type, scroll.x + x, scroll.y + y, {animated: false, frame: tile.frame, alpha: tile.alpha}]);						
 					}
 				} else {
-					sprites.push([tile.type, scroll.x + tile.x, scroll.y + tile.y, {animated: false, frame: tile.frame}]);
+					sprites.push([tile.type, scroll.x + x, scroll.y + y, {animated: false, frame: tile.frame, alpha: tile.alpha}]);
 				}
 			}
 		});
@@ -1491,7 +1668,7 @@ const Game = function() {
 				const killed = (now - lastKilled.time) < 60000 ? lastKilled.npc : null;
 				const topics = !killed ? HOT_TOPICS.normal : killed.parasite ? HOT_TOPICS.justKilled : HOT_TOPICS.justKilledHuman;
 				let text = memoryLanes() ? npcToTalk.memory : whoAreYou() ? npcToTalk.introduction : npcToTalk.husband ? (inFinal?
-					FINALCHATS[finalChat]:"Remember our vacation?") 
+					FINALCHATS[finalChat][0]:"Remember our vacation?") 
 				: topics[npcToTalk.id % topics.length]; //'Greetings. What can I do for you?';
 				lastMessage = text;
 				if (killed) {
@@ -1506,7 +1683,7 @@ const Game = function() {
 						settings.size[0] / 2 - Math.min(text.length, STRING_LIMIT) * 2 + hero.face.dx * 20 - 10, settings.size[1] / 2 - 30, { text, color: npcToTalk.textColor, speechSpeed: SPEECH_SPEED, talkTime: npcToTalk.talking, zOrder: 3, outline: npcToTalk.outline }]);
 				}
 			
-				const shouldTalk = npcToTalk.talking && now - npcToTalk.talking < lastMessage.length * SPEECH_SPEED;
+				let shouldTalk = npcToTalk.talking && now - npcToTalk.talking < lastMessage.length * SPEECH_SPEED;
 				if(npcToTalk.talking && !shouldTalk) {
 //					sprites.push(['gun', settings.size[0] - 50, settings.size[1] - 40, { size: [20,20], zOrder: 3}]);
 					if(!inFinal) {
@@ -1550,15 +1727,16 @@ const Game = function() {
 
 
 	let FINALCHATS = [
-		"I don't care what's happening out there. You and I, we're going to survive this.",
-		"Wait, can you be so sure that I'm a parasite? After all we've been through together.",
-		"Oh please don't kill me. You must have a bad memory of me hidden somewhere.",
-		"No! Wait! There's this one time... you know... please try to remember...",
-		"--1-",
-		"--2-",
-		"--3-",
-		"--4-",
-	].map(wrapText);
+		["I don't care what's happening out there. You and I, we're going to survive this."],
+		["Wait, can you be so sure that I'm a parasite? After all we've been through together."],
+		["Oh please don't kill me. You must have a bad memory of me hidden somewhere."],
+		["No! Wait! There's this one time... you know... please try to remember..."],
+		["--1-"],
+		["Well I guess, you're human after all, Sleepy Gary", true],
+		["So human....", true],
+		["Yes, I am your real husband Sleepy Gary. Now can we stop this nonsense? Let's go home."],
+		["I guess...", true],
+	].map(([chat, heroTalk]) => [wrapText(chat), heroTalk]);
 
 	function getSprites2(now) {
 		sprites.length = 0;
@@ -1711,7 +1889,7 @@ const Game = function() {
 		return [
 			['sex', 0, 50, {animated: true}],
 			['sex-caught', 0, 50, {animated: true, after: 7000, animationStart: 7000}],
-			['text', 20, 42, { text: "Sleepy Gary! how could you?           \n\nAnd with...              YOU.", color: '#cccccc', speechSpeed: 100, talkTime: 11000, zOrder: 3, outline: '#222222' }],
+			['text', 20, 42, { text: "Sleepy Gary! how could you?           \n\nAnd with...              HER.", color: '#cccccc', speechSpeed: 100, talkTime: 11000, zOrder: 3, outline: '#222222' }],
 
 		];
 
@@ -1854,6 +2032,10 @@ const Game = function() {
 				repeat: 1,
 			}],
 			['moonlight.png'],
+			['house-background.png'],
+			['couch.png', 160, 64, {
+				offset: {x: 0, y: -64},
+			}],
 
 
 			["spring_sprinkle.mp3", 1, loop],
@@ -1872,6 +2054,10 @@ const Game = function() {
 				},
 				init: [
 					initScene,
+					[ '=>', 'back.x', -64],
+					[ '=>', 'back.y', -112],
+					[ '=>', 'couch.x', -64 + 32*15],
+					[ '=>', 'couch.y', -112 + 32*10],
 					[ '=>', 'music', 'spring_sprinkle' ],
 				],
 				actions: [
