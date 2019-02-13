@@ -1,7 +1,7 @@
 const Game = function() {
 	const DEBUG = {
 		canExit: true,
-//		shortExit: true,
+		shortExit: false,
 	};
 
 	const BACKGROUND_COLOR = "black";//"#121622";
@@ -14,11 +14,15 @@ const Game = function() {
 	const SPEECH_SPEED = 30;
 	const loop = 'loop';
 
-	const RANDOM_SYLLABLES = [
-		'jo', 'ja', 'ne', 'ka', 'vi', 'dof', 'lin', 'chu', 'rat', 'be', 'do', 'nald', 'tay', 'lor', 
-		'ric', 'ky', 'mor', 'ty', 'jer', 'ry', 'vin', 'cent', 'liz', 'beth', 'scar', 'lett',
-		'emi', 'elvi', 'har', 'wubbalubbadubdub',
-	];
+	const RANDOM_LEFT = ['rick', 'san', 'mor', 'smith', 'beth', 'jer', 'sum', 'har', 'jes', 'va', 'gol', 'fera', 'brad', 'et', 'nan', 'to', 'tri', 'vin', 'phil', 'seth', 'mee', 'bird', 'squan', 'uni', 'poo', 'butt'];
+	const RANDOM_RIGHT = ['', 'cent', 'lip', 'chez', 'ty', 'ry', 'mer', 'ry', 'sica', 'gina', 'denfold', 'tu', 'han', 'cy', 'by', 'cia', 'seeks', 'person', 'chy', 'ty', 'py', 'hole', 'wubbalubbadubdub'];
+
+
+	// const RANDOM_SYLLABLES = [
+	// 	'jo', 'ja', 'ne', 'ka', 'vi', 'dof', 'lin', 'chu', 'rat', 'be', 'do', 'nald', 'tay', 'lor', 
+	// 	'ric', 'ky', 'mor', 'ty', 'jer', 'ry', 'vin', 'cent', 'liz', 'beth', 'scar', 'lett',
+	// 	'emi', 'elvi', 'har', 'wubbalubbadubdub',
+	// ];
 
 	const randomMess = Math.floor(Math.random()*10000000);
 
@@ -282,11 +286,11 @@ const Game = function() {
 	}
 
 	function husbandIntro(gender) {
-		return wrapText("I'm Sleepy Gary, your lovely "+(gender==='penis' ? 'husband' : 'wife')+". We've had a wonderful life together, remember?");
+		return wrapText("I'm Slurpy Gary, your lovely "+(gender==='penis' ? 'husband' : 'wife')+". We've had a wonderful life together, remember?");
 	}
 
 	function husbandMemory(gender) {
-		return wrapText("You remember the day you said 'I do.' to Sleepy Gary, your lovely husband. Gary forgot that day so he showed up at the ceremony in pyjamas, a cherished moment you will always remember.");
+		return wrapText("You remember the day you said 'I do.' to Slurpy Gary, your lovely husband. Gary forgot that day so he showed up at the ceremony in pyjamas, a cherished moment you will always remember.");
 	}
 
 	function randomMemory(index, good, name) {
@@ -379,6 +383,7 @@ const Game = function() {
 	].forEach(a => blocks[a] = true);
 
 	const freeSpaces = [];
+	let door = null;
 
 	const tiles = [], cols = /*Math.floor(WORLD_SIZE[0] / 32)*/ 33, rows = 11;//Math.floor(WORLD_SIZE[1] / 32);
 	for (let r = 0; r < rows; r++) {
@@ -393,7 +398,7 @@ const Game = function() {
 				freeSpaces.push({x: c * 32 - 16, y: r * 32 - 16});
 			}
 			if(isDoor) {
-				tiles.push({ type: 'the-door', x: c * 32 - 16, y: r * 32 - 16, frame:1, door:'closed', });
+				tiles.push(door = { type: 'the-door', x: c * 32 - 16, y: r * 32 - 16, frame:1, door:'closed', });
 				tiles.push({ type: 'the-door', x: c * 32 - 16, y: r * 32 - 16, frame:0, door:'opened', });
 			}
 			walls[c + "_" + r] = isDoor ? 'door' : isWall ? type : null;
@@ -418,8 +423,9 @@ const Game = function() {
 			}
 			const gender = husband || Math.random() < .5 ? 'penis' : 'vagina';
 			const faceColor = husband ? FACE_COLORS.filter(a => a.name==="pink")[0] : getRandom(FACE_COLORS);
-			const name = makeCap(RANDOM_SYLLABLES[(randomMess + index+12345)%RANDOM_SYLLABLES.length]
-				+ RANDOM_SYLLABLES[(randomMess + index)%RANDOM_SYLLABLES.length]);
+			const name = makeCap(
+				RANDOM_LEFT[(randomMess + index+12345)%RANDOM_LEFT.length]
+				+ RANDOM_RIGHT[(randomMess + index)%RANDOM_RIGHT.length]);
 			const occupation = OCCUPATIONS[(randomMess + index+323)%OCCUPATIONS.length];
 
 			const posIndex = Math.floor(Math.random() * freeSpaces.length);
@@ -457,7 +463,7 @@ const Game = function() {
 		if (DEBUG.canExit) {
 			return true;
 		}
-		return inHallway || parasiteCount===0;
+		return garyHidden && (inHallway || parasiteCount===0);
 	}
 
 	function initScene() {
@@ -574,7 +580,7 @@ const Game = function() {
 		const parasite = false;
 		const gender = 'penis';
 		const faceColor = FACE_COLORS.filter(a => a.name==="pink")[0];
-		const name = 'Sleepy Gary';
+		const name = 'Slurpy Gary';
 		const occupation = 'husband';
 		const move = { dx: 0, dy: 0};
 
@@ -605,7 +611,7 @@ const Game = function() {
 
 
 		// FINALCHATS = [
-		// 	"You're right Sleepy Gary. You really are... human.",
+		// 	"You're right Slurpy Gary. You really are... human.",
 		// 	"--1-",
 		// 	"--2-",
 		// 	"--3-",
@@ -655,7 +661,7 @@ const Game = function() {
 		const parasite = false;
 		const gender = 'penis';
 		const faceColor = FACE_COLORS.filter(a => a.name==="pink")[0];
-		const name = 'Sleepy Gary';
+		const name = 'Slurpy Gary';
 		const occupation = 'husband';
 		const move = { dx: 0, dy: 0};
 
@@ -695,7 +701,7 @@ const Game = function() {
 		exitedTheBuilding = 0;
 		exited = false;
 
-		const COLS = 7, ROWS = DEBUG.shortExit ? 5 :30;
+		const COLS = 7, ROWS = DEBUG.shortExit ? 5 :20;
 		for(let r=0; r < ROWS; r++) {
 			for(let c = 0; c < COLS; c++) {
 				const isDoor = c === Math.floor(COLS/2) && r === 1;
@@ -721,11 +727,53 @@ const Game = function() {
 		}
 	}
 
+	let noMoreActions = false;
+
 	function performActions5(now) {
+		if(noMoreActions) {
+			return ;
+		}
+
+
 		hero.move.dy = 0;
 		hero.move.dx = 0;
 
+		if(gameOver) {
+			if(finalEnding ==='LEAVE') {
+				Engine.evaluate(['setMusic', 'evil_vortman', false]);
+				if(now - gameOver > 3000) {
+					hero.move.dx = -1;
+					hero.face.dx = -1;
+					hero.x--;
+				}
+
+				if(now - gameOver > 7000) {
+					gary.move.dx = -1;
+					gary.face.dx = -1;
+					gary.x--;
+				}
+
+				// if(now - gameOver > 20000) {
+				// 	Engine.nextScene();
+				// }
+			}
+			else if(finalEnding==='SHOOT') {
+				if(now - lastShot.time > 3000) {
+//					hero.move.dx = 1;
+					hero.gun = 0;
+					console.log(hero);
+					Engine.evaluate(['setMusic', 'evil_vortman', false]);
+					noMoreActions = true;					
+				}
+			}
+
+			return;
+		}
+
 		if(!talking) {
+			if(inFinalMoment) {
+				return;
+			}
 			talking = now;
 			hero.move.dx = 0;
 			hero.move.dy = 0;
@@ -746,7 +794,9 @@ const Game = function() {
 				npcToTalk = null;
 			} else {
 				if(now - talking > 1000 && !npcToTalk.talking) {
-					npcToTalk.talking = now;
+					if(!inFinalMoment) {
+						npcToTalk.talking = now;
+					}
 				}//console.log(Keyboard.move.dy);
 				//inFinalfinal
 
@@ -766,31 +816,71 @@ const Game = function() {
 
 		if(!alreadyPressed && Keyboard.action.down) {
 			{
-				if(npcToTalk) {
+				let shouldTalk = npcToTalk.talking && now - npcToTalk.talking < lastMessage.length * SPEECH_SPEED;
+
+
+				if(npcToTalk && !inFinalMoment && !shouldTalk) {
 //					talking = talking ? 0 : now;
 					if(!talking) {
 					} else if (finalChat < FINALCHATS_NEXT) {
 						npcToTalk.talking = 0;
 						finalChat ++;
 						chatIndex = 3;
-					} else {
+					} else if(finalChat < FINALCHATS.length) {
 						npcToTalk.talking = 0;
 						finalChat ++;
 						chatIndex = 3;
 						// goExit(now);
+//						console.log("here");
+						if(finalChat === FINALCHATS.length) {
+							if(!finalEnding) {
+								hero.gun = now;
+								npcToTalk.talking = 0;
+								inFinalMoment = true;
+							}
+							// talking = 0;
+						}
+					}
+				} else {
+					if(finalChat===FINALCHATS.length && inFinalMoment) {						
+						finalAction("SHOOT", now);
 					}
 				}
 			}
 			alreadyPressed = true;
-		} else if(!alreadyPressed && Keyboard.action.cancel) {
+		} else if(!alreadyPressed && Keyboard.action.cancel && finalChat===FINALCHATS.length) {
 			if(hero.gun) {
 				hero.gun = 0;
 				justPutGunDown = now;
-				Engine.setData('music', 'spring_sprinkle');				
 			}
 			talking = 0;
+			finalAction("LEAVE", now);
 		} else if(alreadyPressed && !Keyboard.action.down && !Keyboard.action.cancel) {
 			alreadyPressed = false;
+		}
+	}
+
+	let gameOver = 0;
+	let inFinalMoment = false;
+	let finalEnding = null;
+	function finalAction(action, now) {
+		if(!gameOver) {
+			if(action==='SHOOT') {
+				lastShot.time = now;
+				Engine.playSound('laser');
+				lastShot.target = null;
+				lastShot.dx = hero.face.dx;
+				lastShot.dy = lastShot.dx ? 0 : (hero.face.dy || 1);
+				lastShot.x = hero.x + (Math.random()-.5)*5 + lastShot.dx * 20;
+				lastShot.y = hero.y + (Math.random()-.5)*5 + lastShot.dy * 20 + (lastShot.dy < 0 ? -20 : 0);
+				// for(let i=0; i<10; i++) {
+				// 	particles.push([lastShot.x, lastShot.y, (Math.random() -.5) * 3 + lastShot.dx, (Math.random()-.5) * 2 + lastShot.dy]);
+				// }
+				gameOver = now;
+			} else if(action==='LEAVE') {
+				gameOver = now;
+			}
+			finalEnding = action;
 		}
 	}
 
@@ -800,6 +890,7 @@ const Game = function() {
 		}
 		if(exitedTheBuilding && now - exitedTheBuilding > 2000 ) {
 			finalfinalScene(now);
+			return;
 		}
 		if(!exitedTheBuilding && now > 20000) {
 			goExit(now);
@@ -916,7 +1007,9 @@ const Game = function() {
 
 			if(!alreadyPressed && Keyboard.action.down) {
 				{
-					if(npcToTalk) {
+							let shouldTalk = npcToTalk.talking && now - npcToTalk.talking < lastMessage.length * SPEECH_SPEED;
+
+					if(npcToTalk && !shouldTalk) {
 	//					talking = talking ? 0 : now;
 						if(!talking) {
 						} else if (finalChat < FINALCHATS_NEXT) {
@@ -932,13 +1025,6 @@ const Game = function() {
 					}
 				}
 				alreadyPressed = true;
-			} else if(!alreadyPressed && Keyboard.action.cancel) {
-				if(hero.gun) {
-					hero.gun = 0;
-					justPutGunDown = now;
-					Engine.setData('music', 'spring_sprinkle');				
-				}
-				talking = 0;
 			} else if(alreadyPressed && !Keyboard.action.down && !Keyboard.action.cancel) {
 				alreadyPressed = false;
 			}
@@ -1009,6 +1095,12 @@ const Game = function() {
 			}
 		}
 	}
+
+	let garyWhoAreYou = 0;
+	let garyMemory = 0;
+	let garyGun = 0;
+	let garyScared = 0;
+	let garyHidden = false;
 
 	function performActions(now) {
 		// if(!hero.gun) {
@@ -1164,6 +1256,11 @@ const Game = function() {
 									break;
 									case 3: // GUN
 									{
+										if(!garyGun) {
+											garyGun++;
+											garyScared++;
+										}
+
 										discussionTopic = null;
 										hero.gun = now;
 										npcToTalk.move.dx = Math.floor(Math.random() * 3) - 1;
@@ -1225,6 +1322,7 @@ const Game = function() {
 		const SHOOTING_AREA_Y = 20;
 		let shotNpc = null;
 
+
 		parasites.forEach(parasite => {
 			if(now - parasite.born < 700) {
 				return;
@@ -1261,6 +1359,7 @@ const Game = function() {
 
 					// parasite.x += realDx;
 					// parasite.y += realDy;
+
 
 
 					if (parasite.blocked < 100) {
@@ -1332,6 +1431,9 @@ const Game = function() {
 		});
 
 		npcs.forEach(npc => {
+			if(npc.hidden) {
+				return;
+			}
 			if(wasShooting && !shotNpc && lastShot.target == null && !npc.husband && !npc.shot)
 			{
 				const { dx, dy } = lastShot;
@@ -1449,11 +1551,26 @@ const Game = function() {
 				}
 
 				let { dx, dy } = npc.move;
+
+
+				const goThroughWall = npc.husband && garyScared>=3 && hero.gun;
+				if(goThroughWall) {
+					dx = door.x + 10 - npc.x;
+					dy = door.y + 50 - npc.y;
+				}
+
+
 				let dist = Math.sqrt(dx * dx + dy * dy);
+				if(goThroughWall) {
+					if(dist < 10) {
+						garyHidden = true;
+						npc.hidden = true;
+					}
+				}
 				if (dist) {
 					let realDx = npcSpeed * dx / dist;
 					let realDy = npcSpeed * dy / dist;
-					if (npc.blocked < 100) {
+					if (npc.blocked < 100 && !goThroughWall) {
 						if (blocked(npc.x + realDx, npc.y + realDy, true)) {
 							if (!blocked(npc.x + realDx, npc.y - realDy, true)) {
 								realDy = -realDy;
@@ -1556,16 +1673,27 @@ const Game = function() {
 			face = [character['face'], OFFSET_X + faceDx * faceOffsetX, OFFSET_Y -26 + faceDy, {animated: true, animMove: moveDist, flip: faceDx>0}];
 			let shouldTalk = !memoryLanes() && npc.talking && now - npc.talking < lastMessage.length * SPEECH_SPEED;
 			
-			if(inFinalFinal) {
+			if(inFinalFinal && finalChat < FINALCHATS.length) {
 				if(FINALCHATS[finalChat][1]) {
-					shouldTalk = shouldTalk && npc === hero;
-					if(shouldTalk && !hero.talking) {
-						hero.talking = now;
-						console.log("HERE", hero.talking);
+
+					if(npc!==hero) {
+						shouldTalk = false;
+					} else {
+						shouldTalk = gary.talking && now - gary.talking < lastMessage.length * SPEECH_SPEED;
 					}
+					// shouldTalk = shouldTalk && npc !== hero;
+					// console.log("here", shouldTalk, npc===hero);
+					// if(shouldTalk && !hero.talking) {
+					// 	hero.talking = now;
+					// 	console.log("HERE", hero.talking);
+					// }
 				} else {
 					shouldTalk = shouldTalk && npc.type==='gary'
 				}
+			}
+
+			if(inFinalMoment) {
+				shouldTalk = false;
 			}
 
 			mouth = [character['mouth'], OFFSET_X + faceDx * faceOffsetX, OFFSET_Y -26 + faceDy, {
@@ -1578,7 +1706,7 @@ const Game = function() {
 			downThere = [npc.gender || 'penis', OFFSET_X, OFFSET_Y, {animated: moveDist}];
 		}
 
-		const bubble = !hero.gun && npc === npcToTalk && !talking ? ['bubble', OFFSET_X - 5, OFFSET_Y - 30, {}] : 0;
+		const bubble = !inFinalMoment && !hero.gun && npc === npcToTalk && !talking ? ['bubble', OFFSET_X - 5, OFFSET_Y - 30, {}] : 0;
 
 		return [
 			'group', x, y, {}, [
@@ -1598,6 +1726,7 @@ const Game = function() {
 
 	const SPRITE_SIZE = 32;
 	function onScreen(object) {
+		if(object.hidden) return false;
 		if(object.alwaysOnScreen) return true;
 		const [ width, height ] = settings.size;
 		return object.x + scroll.x > -SPRITE_SIZE && object.x + scroll.x < width + SPRITE_SIZE && object.y + scroll.y > -SPRITE_SIZE && object.y + scroll.y < height + SPRITE_SIZE * 2;
@@ -1625,8 +1754,14 @@ const Game = function() {
 			return sprites;
 		}
 		if(!exitedTheBuilding || inFinal) {
-			const heroSprite = shooting(now) ? 'gunshooting' : showGun() ? 'gun' : 'hero';
-			const heroDx = hero.face.dx;
+			let stopShoot = false;
+			if(finalEnding==='SHOOT') {
+				stopShoot = now - lastShot.time > 3000;
+			}
+			window.hero = hero;
+
+			const heroSprite = stopShoot ? 'hero' : shooting(now) ? 'gunshooting' : showGun() ? 'gun' : 'hero';
+			const heroDx = finalEnding==='SHOOT' ? 1 : hero.face.dx;
 			const heroDy = hero.face.dy;
 			// const heroDx = hero.gun ? hero.face.dx : hero.move.dx;
 			// const heroDy = hero.gun ? hero.face.dy : hero.move.dy;
@@ -1636,6 +1771,10 @@ const Game = function() {
 		npcs.forEach(npc => {
 			if (onScreen(npc)) {
 //				if(!npc.shot || Math.random() > .8) {
+					if(npc.husband && finalEnding === 'SHOOT') {
+						return;
+					}
+
 					sprites.push(getSprite(npc.type, scroll.x + npc.x, scroll.y + npc.y, npc.move.dx, npc.move.dy, npc, now));
 //				}
 			}
@@ -1658,7 +1797,7 @@ const Game = function() {
 				}
 			}
 		});
-		if (talking && npcToTalk) {
+		if (talking && npcToTalk && finalChat < FINALCHATS.length) {
 			const LETTER_BOX_SIZE = Math.min(70, (now - talking) / 8);
 			if(!inFinal) {
 				sprites.push(['rect',0, 0, { width: settings.size[0], height: LETTER_BOX_SIZE, zOrder: 1 }]);
@@ -1668,7 +1807,7 @@ const Game = function() {
 				const killed = (now - lastKilled.time) < 60000 ? lastKilled.npc : null;
 				const topics = !killed ? HOT_TOPICS.normal : killed.parasite ? HOT_TOPICS.justKilled : HOT_TOPICS.justKilledHuman;
 				let text = memoryLanes() ? npcToTalk.memory : whoAreYou() ? npcToTalk.introduction : npcToTalk.husband ? (inFinal?
-					FINALCHATS[finalChat][0]:"Remember our vacation?") 
+					(FINALCHATS[finalChat][0]):"Remember our vacation?") 
 				: topics[npcToTalk.id % topics.length]; //'Greetings. What can I do for you?';
 				lastMessage = text;
 				if (killed) {
@@ -1679,7 +1818,7 @@ const Game = function() {
 					sprites.push(['text', 20, 42, { text, color: 'white', speechSpeed: SPEECH_SPEED, talkTime: npcToTalk.talking, zOrder: 3, outline: '#222222' }]);
 				} else {
 					sprites.push(['text', 
-						- (inFinalFinal ? 30 : 0) +
+						- (inFinalFinal && FINALCHATS[finalChat][1] ? 50 : 0) +
 						settings.size[0] / 2 - Math.min(text.length, STRING_LIMIT) * 2 + hero.face.dx * 20 - 10, settings.size[1] / 2 - 30, { text, color: npcToTalk.textColor, speechSpeed: SPEECH_SPEED, talkTime: npcToTalk.talking, zOrder: 3, outline: npcToTalk.outline }]);
 				}
 			
@@ -1692,15 +1831,33 @@ const Game = function() {
 						sprites.push(getFinalMenu(now));
 					}
 				}
+				if(npcToTalk.husband && (memoryLanes() || whoAreYou())) {
+					if(whoAreYou()) {
+						if(!garyWhoAreYou) {
+							garyWhoAreYou++;
+							garyScared ++;
+						}
+					}
+					if(memoryLanes()) {
+						if(!garyMemory) {
+							garyMemory++;
+							garyScared ++;
+						}
+					}
+				}
 			}
 		}
-		if (hero.gun && !inFinal && !inHallway) {
+		if (hero.gun && (!inFinal && !inHallway || finalChat == FINALCHATS.length)) {
 			const LETTER_BOX_SIZE = Math.min(30, (now - hero.gun) / 8);
-			sprites.push(['rect',0, 0, { width: settings.size[0], height: LETTER_BOX_SIZE, zOrder: 2 }]);
-			sprites.push(['rect',0, settings.size[1] - LETTER_BOX_SIZE, { width: settings.size[0], height: LETTER_BOX_SIZE, zOrder: 2 }]);
-			sprites.push(['gun', settings.size[0] - 50, settings.size[1] - 30, { zOrder: 3}]);
-			sprites.push(['text', 10, 25, { text: "ESC: PUT AWAY THE GUN\nSPACE: SHOOT", zOrder: 3, color: '#FFFFFF'}]);
-			sprites.push(['text', settings.size[0] - 40, 27, {text: parasiteCount, zOrder: 3, color: '#29b8b8', fontSize: 20}])
+			if(finalEnding!=='SHOOT') {
+				sprites.push(['rect',0, 0, { width: settings.size[0], height: LETTER_BOX_SIZE, zOrder: 2 }]);
+				sprites.push(['rect',0, settings.size[1] - LETTER_BOX_SIZE, { width: settings.size[0], height: LETTER_BOX_SIZE, zOrder: 2 }]);
+				sprites.push(['gun', settings.size[0] - 50, settings.size[1] - 30, { zOrder: 3}]);
+				sprites.push(['text', 10, 25, { text: "ESC: PUT AWAY THE GUN\nSPACE: SHOOT", zOrder: 3, color: '#FFFFFF'}]);
+			}
+			if(!inFinal) {
+				sprites.push(['text', settings.size[0] - 40, 27, {text: parasiteCount, zOrder: 3, color: '#29b8b8', fontSize: 20}])
+			}
 
 			if(shooting(now) && !lastShot.target) {
 				sprites.push(makeBullet(lastShot, scroll));
@@ -1716,6 +1873,134 @@ const Game = function() {
 			}
 		});
 
+		if(finalEnding === 'SHOOT') {
+			if(npcToTalk) {
+				sprites.push(['gary-shot', scroll.x + npcToTalk.x - 47, scroll.y + npcToTalk.y - 63, {animated: true, animationStart: gameOver}]);
+			}
+			if(now - gameOver > 10000) {
+				sprites.push(['the-end', 0, 0, {zOrder: 1}]);
+			}			
+		}
+
+		if(finalEnding === 'LEAVE') {
+			sprites.push(['text', 0, 600-(now - gameOver - 10000) / 120, {text: 				
+				'    This game was produced for\n\n'+
+				'        TV Game Jam 2019\n'+
+				'\n'+
+				'\n'+
+				'    based on the television show\n'+
+				'\n'+
+				'          RICK and MORTY\n'+
+				'\n'+
+				'          Episode: Total Rickall\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'   Programming and character art:\n'+
+				'\n'+
+				'            jacklehamster\n'+
+				'\n'+
+				'\n'+
+				'             Decor art:\n'+
+				'\n'+
+				'          snowflakestudios\n'+
+				'\n'+
+				'\n'+
+				'          Music and sounds:\n'+
+				'\n'+
+				'             cheesymoo\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'    We all thank you for playing\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'                        You\'re still here! \n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'                    Nice scenery isn\'t it?! \n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'                    Why don\'t you go home? \n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				"        Trust me, there's nothing left to read.\n"+
+				""
+
+				,
+				zOrder: 3, color: '#ffffff', outline: '#000000', fontSize: 20}]);
+		}
 		return sprites;
 	}
 
@@ -1730,12 +2015,16 @@ const Game = function() {
 		["I don't care what's happening out there. You and I, we're going to survive this."],
 		["Wait, can you be so sure that I'm a parasite? After all we've been through together."],
 		["Oh please don't kill me. You must have a bad memory of me hidden somewhere."],
-		["No! Wait! There's this one time... you know... please try to remember..."],
+		["No! Wait! There's this one time... you know?... Please try to remember..."],
 		["--1-"],
-		["Well I guess, you're human after all, Sleepy Gary", true],
-		["So human....", true],
-		["Yes, I am your real husband Sleepy Gary. Now can we stop this nonsense? Let's go home."],
-		["I guess...", true],
+		["I do remember now.", true],
+		["I was supposed to leave for Europe but my flight got cancelled. So I came back home...", true],
+		["...and found you in bed with...", true],
+		["I was drunk that night! And lonely! I just made a stupid mistake and I regret."],
+		["Well I guess, you're human after all, Slurpy Gary", true],
+		["So very human....", true],
+		["Yes, I am your real husband Slurpy Gary. Now can we stop this nonsense?"],
+		["Please put away the gun and let's go home."],
 	].map(([chat, heroTalk]) => [wrapText(chat), heroTalk]);
 
 	function getSprites2(now) {
@@ -1794,15 +2083,15 @@ const Game = function() {
 	const FINALMENUS = [
 		[
 			['text', 20, -15, { text: "I know I'll survive this. Don't know about you.", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
-			['text', 20, 0, { text: "You're a parasite, Sleepy Gary.", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
-			['text', 20, 15, { text: "Sleepy Gary, you've been a bad, bad boy.", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+			['text', 20, 0, { text: "You're a parasite, Slurpy Gary.", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+			['text', 20, 15, { text: "Slurpy Gary, you've been a bad, bad boy.", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
 			['text', 20, 30, { text: 'Goodbye Spleepy Gary. I will miss you.', speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
 		],
 		[
 			['text', 20, -15, { text: "Parasites can't implant bad memories.", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
 			['text', 20, 0, { text: "I don't have a single bad memory of you.", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
-			['text', 20, 15, { text: "You are my best memories, Sleepy Gary.", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
-			['text', 20, 30, { text: "You're too good to be real, Sleepy Gary.", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+			['text', 20, 15, { text: "You are my best memories, Slurpy Gary.", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
+			['text', 20, 30, { text: "You're too good to be real, Slurpy Gary.", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
 		],
 		[
 			['text', 20, -15, { text: "That nice vacation on our yatch?", speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
@@ -1889,7 +2178,7 @@ const Game = function() {
 		return [
 			['sex', 0, 50, {animated: true}],
 			['sex-caught', 0, 50, {animated: true, after: 7000, animationStart: 7000}],
-			['text', 20, 42, { text: "Sleepy Gary! how could you?           \n\nAnd with...              HER.", color: '#cccccc', speechSpeed: 100, talkTime: 11000, zOrder: 3, outline: '#222222' }],
+			['text', 20, 42, { text: "Slurpy Gary! how could you?           \n\nAnd with...              HER.", color: '#cccccc', speechSpeed: 100, talkTime: 11000, zOrder: 3, outline: '#222222' }],
 
 		];
 
@@ -2036,9 +2325,14 @@ const Game = function() {
 			['couch.png', 160, 64, {
 				offset: {x: 0, y: -64},
 			}],
+			['gary-shot.png', 64, 64, {
+				count: 5,
+				repeat: 1,
+			}],
+			['the-end.png', 320, 256],
 
 
-			["spring_sprinkle.mp3", 1, loop],
+			["spring_sprinkle.mp3", 1, loop, true],
 			["vick_n_vorty.mp3", 1, loop],
 			["evil_vortman.mp3", 1, loop],
 			["parasite_die.wav", 1],
@@ -2116,18 +2410,25 @@ const Game = function() {
 					performActions5,
 				],
 				sprites: getSprites,
-			},			
+			},
 			{
 				fadeStart: ['exitTime'],
-				backgroundColor: 'black',
+				objects: {
+
+				},
 				init: [
-					[ '=>', 'music', 'evil_vortman' ],
+					initScene,
+					[ '=>', 'back.x', -64],
+					[ '=>', 'back.y', -112],
+					[ '=>', 'couch.x', -64 + 32*15],
+					[ '=>', 'couch.y', -112 + 32*10],
+					[ '=>', 'music', 'spring_sprinkle' ],
 				],
 				actions: [
-					['setMusic', ['music']],
+					performActions,
 				],
+				sprites: getSprites,
 			},
-
 		],
 	};
 }();

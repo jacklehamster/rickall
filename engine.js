@@ -1,5 +1,5 @@
 const Engine = function(document, Game) {
-
+	const DEBUG = false;
 	let mainCanvas, ctx;
 	let pixelSize = 1;
 	let scene = null;
@@ -147,7 +147,7 @@ const Engine = function(document, Game) {
 		return colorCanvas;
 	}
 
-	function loadSound(src, vol, loop) {
+	function loadSound(src, vol, loop, autoStart) {
 		const audio = new Audio();
 		audio.addEventListener('canplaythrough', e => {
 			const tag = src.split("/").pop().split(".").slice(0, -1).join("");
@@ -164,6 +164,9 @@ const Engine = function(document, Game) {
 				type: 'audio',
 				audio,
 			});
+			if(autoStart && Keyboard.action.pressedOnce) {
+				audio.play();
+			}
 		});
 		audio.src = src;
 	}
@@ -370,7 +373,8 @@ const Engine = function(document, Game) {
 				case 'setMusic':
 					{
 						const song = evaluate(action[1], context);
-						setMusic(song ? stock[song] : null);
+						const loop = action[2];
+						setMusic(song ? stock[song] : null, loop);
 //						console.log(action, evaluate(action[1], context));
 					}
 					break;
@@ -392,7 +396,7 @@ const Engine = function(document, Game) {
 
 	const playingMusic = {};
 
-	function setMusic(music) {
+	function setMusic(music, loop) {
 		for(let m in playingMusic) {
 			if(!music || m !== music.tag) {
 				if(playingMusic[m]) {
@@ -405,11 +409,15 @@ const Engine = function(document, Game) {
 			return;
 		}
 
-		if(!playingMusic[music.tag]) {
-			playingMusic[music.tag] = music;
-		}
 		if(Keyboard.action.pressedOnce) {
-			music.audio.play();
+			if(!playingMusic[music.tag]) {
+				playingMusic[music.tag] = music;
+				music.audio.play();
+			}
+		}
+		if(loop===true || loop===false) {
+			console.log(music.tag, loop);
+			music.audio.loop = loop;
 		}
 	}
 
@@ -428,18 +436,18 @@ const Engine = function(document, Game) {
 			});
 		assets.filter(asset => asset[0].split(".").pop()==='mp3')
 			.forEach(asset => {
-				const [ src, vol, loop ] = asset;
-				loadSound(src, vol, loop);
+				const [ src, vol, loop, autoStart ] = asset;
+				loadSound(src, vol, loop, autoStart);
 			});
 		assets.filter(asset => asset[0].split(".").pop()==='ogg')
 			.forEach(asset => {
-				const [ src, vol, loop ] = asset;
-				loadSound(src, vol, loop);
+				const [ src, vol, loop, autoStart ] = asset;
+				loadSound(src, vol, loop, autoStart);
 			});
 		assets.filter(asset => asset[0].split(".").pop()==='wav')
 			.forEach(asset => {
-				const [ src, vol, loop ] = asset;
-				loadSound(src, vol, loop);
+				const [ src, vol, loop, autoStart ] = asset;
+				loadSound(src, vol, loop, autoStart);
 			});
 	}
 
@@ -464,12 +472,17 @@ const Engine = function(document, Game) {
 
 	function nextScene() {
 		const { scenes } = Game;
-		setScene(scenes.indexOf(scene) + 1);
+		setScene(getScene() + 1);
 	}
 
 	function previousScene() {
 		const { scenes } = Game;
-		setScene(scenes.indexOf(scene) - 1);
+		setScene(getScene() - 1);
+	}
+
+	function getScene() {
+		const { scenes } = Game;
+		return scenes.indexOf(scene);
 	}
 
 	function setScene(index) {
@@ -588,7 +601,10 @@ const Engine = function(document, Game) {
 		const renderedSprites = getRendered(sprites);
 		renderedSprites.sort(compareSprites);
 		renderSprites(renderedSprites, 0, 0, now, {});
-		renderDebug(now);
+		if (DEBUG) {
+			renderDebug(now);
+
+		}
 	}
 
 	function compareSprites(sprite1, sprite2) {
@@ -789,5 +805,6 @@ const Engine = function(document, Game) {
 		nextScene,
 		playSound,
 		previousScene,
+		getScene,
 	};
 }(document, Game);
