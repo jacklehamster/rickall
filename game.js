@@ -2510,6 +2510,7 @@ const Game = function() {
 			["laser.wav", 0.4],
 			["ui_yes.wav", 1],
 			["ui_no.wav", 1],
+			["hit.wav", 0.4],
 		],
 		scenes: [
 			{
