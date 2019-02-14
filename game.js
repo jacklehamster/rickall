@@ -1,7 +1,10 @@
 const Game = function() {
 	const DEBUG = {
-		canExit: true,
+		canExit: false,
 		shortExit: false,
+		gunnow: false,
+		timeFreeze: false,
+		lost: false,
 	};
 
 	const BACKGROUND_COLOR = "black";//"#121622";
@@ -10,7 +13,6 @@ const Game = function() {
 	const STRING_LIMIT = 29;
 	const LONG_STRING_LIMIT = 45;
 	const NPC_COUNT = 14;//100;
-	const TIME_FREEZE = false;//true;
 	const SPEECH_SPEED = 30;
 	const loop = 'loop';
 
@@ -300,8 +302,9 @@ const Game = function() {
 	}
 
 	let parasiteCount = 0;
+	let ppCount = 0;
+	let npcCount = 0;
 
-	let totalParasiteCount = parasiteCount;
 	const walls = {}, surface = {}, npcWalls = {};
 
 	const blocks = {};
@@ -432,6 +435,9 @@ const Game = function() {
 			const {x, y} = freeSpaces[posIndex];
 			freeSpaces[posIndex] = freeSpaces[freeSpaces.length-1];
 			freeSpaces.pop();
+			if(!parasite) {
+				npcCount++;
+			}
 
 			return { 
 				id: index,
@@ -457,16 +463,21 @@ const Game = function() {
 			};
 		}
 	);
+	let totalParasiteCount = parasiteCount;
+	let heartCount = 3;
 
 
 	function canExit() {
 		if (DEBUG.canExit) {
 			return true;
 		}
-		return garyHidden && (inHallway || parasiteCount===0);
+		return garyHidden && (inHallway || parasiteCount===0 && ppCount===0);
 	}
 
-	function initScene() {
+	function initScene(now) {
+		if(DEBUG.gunnow) {
+			hero.gun = 1;
+		}
 	}
 
 	function occupy(x, y, value) {
@@ -503,11 +514,11 @@ const Game = function() {
 	let exitedTheBuilding = 0;
 	function goExit(now) {
 //		exited = true;
-		try {
-			throw new Error();
-		}catch(e) {
-			console.log(e);
-		}
+		// try {
+		// 	throw new Error();
+		// }catch(e) {
+		// 	console.log(e);
+		// }
 		exitedTheBuilding = now;
 		Engine.setData('exitTime', now);
 	}
@@ -521,10 +532,11 @@ const Game = function() {
 		y: 0,
 		dx: 0,
 		dy: 0,
+		size: [0, 0],
 		target: null,
 	};
 
-	let timeFreeze = TIME_FREEZE;
+	let timeFreeze = DEBUG.timeFreeze;
 	let waitUp = false;;
 	let justPutGunDown = 0;
 
@@ -700,6 +712,7 @@ const Game = function() {
 		tiles.length = 0;
 		exitedTheBuilding = 0;
 		exited = false;
+		lastShot.time = 0;
 
 		const COLS = 7, ROWS = DEBUG.shortExit ? 5 :20;
 		for(let r=0; r < ROWS; r++) {
@@ -761,7 +774,7 @@ const Game = function() {
 				if(now - lastShot.time > 3000) {
 //					hero.move.dx = 1;
 					hero.gun = 0;
-					console.log(hero);
+					//console.log(hero);
 					Engine.evaluate(['setMusic', 'evil_vortman', false]);
 					noMoreActions = true;					
 				}
@@ -1102,7 +1115,15 @@ const Game = function() {
 	let garyScared = 0;
 	let garyHidden = false;
 
+	let restarting = false;
 	function performActions(now) {
+		if(lost) {
+			if(Keyboard.action.cancel && !restarting) {
+				restarting = true;
+				location.reload();
+			}
+			return;
+		}
 		// if(!hero.gun) {
 		// 	hero.gun = now;
 		// }
@@ -1173,6 +1194,9 @@ const Game = function() {
 					hero.x += realDx;
 					hero.y += realDy;
 					if(exiting(hero.x, hero.y)) {
+						// justPutGunDown = now;
+						// hero.gun = 0;
+
 						goExit(now);
 					}
 				}
@@ -1184,6 +1208,7 @@ const Game = function() {
 				const shotDy = lastShot.dy * 40;
 				lastShot.x += shotDx;
 				lastShot.y += shotDy;
+				lastShot.size -= shotDx + shotDy;
 
 				particles.forEach(particle => {
 					const [,,dx,dy] = particle;
@@ -1201,9 +1226,26 @@ const Game = function() {
 					Engine.playSound('laser');
 					lastShot.target = null;
 					lastShot.dx = hero.face.dx;
-					lastShot.dy = lastShot.dx ? 0 : (hero.face.dy || 1);
+					lastShot.dy = hero.face.dy;
+					if(!lastShot.dx && !lastShot.dy) {
+						lastShot.dy = 1;
+					}
+
+
+
 					lastShot.x = hero.x + (Math.random()-.5)*5 + lastShot.dx * 20;
-					lastShot.y = hero.y + (Math.random()-.5)*5 + lastShot.dy * 20 + (lastShot.dy < 0 ? -20 : 0);
+					lastShot.y = hero.y + (Math.random()-.5)*5 + lastShot.dy * 20;// + (lastShot.dy < 0 ? -20 : 0);
+
+					let size = 8;
+					// for(size = 1; size < 10; size++) {
+					// 	const x = lastShot.x + size*lastShot.dx;
+					// 	const y = lastShot.y + size*lastShot.dy;
+					// 	if (blocked(x, y, true)) {
+					// 		break;
+					// 	}
+					// }
+					lastShot.size = size * 32;
+
 					for(let i=0; i<10; i++) {
 						particles.push([lastShot.x, lastShot.y, (Math.random() -.5) * 3 + lastShot.dx, (Math.random()-.5) * 2 + lastShot.dy]);
 					}
@@ -1277,12 +1319,14 @@ const Game = function() {
 				}
 				alreadyPressed = true;
 			} else if(!alreadyPressed && Keyboard.action.cancel) {
-				if(hero.gun) {
-					hero.gun = 0;
-					justPutGunDown = now;
-					Engine.setData('music', 'spring_sprinkle');				
-				}
-				talking = 0;
+//				if (ppCount === 0) {
+					if(hero.gun) {
+						hero.gun = 0;
+						justPutGunDown = now;
+						Engine.setData('music', 'spring_sprinkle');				
+					}
+					talking = 0;
+//				}
 			} else if(alreadyPressed && !Keyboard.action.down && !Keyboard.action.cancel) {
 				alreadyPressed = false;
 			}
@@ -1324,7 +1368,8 @@ const Game = function() {
 
 
 		parasites.forEach(parasite => {
-			if(now - parasite.born < 700) {
+//			return;
+			if(now - parasite.born < 700 || parasite.shot) {
 				return;
 			}
 			{
@@ -1349,8 +1394,64 @@ const Game = function() {
 				}
 			}
 
+
+			if(wasShooting && !shotNpc && lastShot.target == null && !parasite.shot)
 			{
-				const speed = 1;
+				const { dx, dy } = lastShot;
+				const [width, height] = settings.size;
+				let shot = false;
+				if(dx && dy) {
+					if(dy * (parasite.y - lastShot.y) > 0 && dx * (parasite.x - lastShot.x) > 0) {
+						//console.log((npc.x -lastShot.x) - (npc.y-lastShot.y));
+						if((parasite.x -lastShot.x) - (parasite.y-lastShot.y) < SHOOTING_AREA_X + SHOOT_MARGIN_Y) {
+							shot = now;
+						}
+					}
+//					console.log((npc.x -lastShot.x) / (npc.y-lastShot.y));
+					// const alignY = npc.y + dx * npc.x;
+					// if (dx * (npc.x - lastShot.x) > 0 && Math.abs(alignY- 16 - lastShot.y) < SHOOTING_AREA_Y && onScreen(npc)) {
+					// 	shot = now;
+					// }					
+				} else if(!dx) {	//	SHOOTING VERTICAL
+					if (dy * (parasite.y - lastShot.y) > 0 && Math.abs(parasite.x - lastShot.x) < SHOOTING_AREA_X && onScreen(parasite)) {
+						shot = now;
+					}
+				} else if(!dy) {	//	SHOOTING HORIZONTAL
+					if (dx * (parasite.x - lastShot.x) > 0 && Math.abs(parasite.y - 16 - lastShot.y) < SHOOTING_AREA_Y && onScreen(parasite)) {
+						shot = now;
+					}
+//					console.log(npc.y, lastShot.y, npc.y - 16 - lastShot.y);
+				}
+				if(shot) {
+					Engine.playSound('parasite_die');
+					// lastKilled.time = now;
+					// lastKilled.npc = parasite;
+					// lastKilled.parasite = npc.parasite;
+					shotNpc = parasite;
+					parasite.shot = now;
+					lastShot.target = parasite;
+					ppCount --;
+					//timeFreeze = true;
+					// for(let i=0; i<10; i++) {
+					// 	particles.push([dx===0 ? lastShot.x : npc.x, dy===0 ? lastShot.y : npc.y, (Math.random() -.5) * 3 + lastShot.dx, (Math.random()-.5) * 2 + lastShot.dy]);
+					// }
+
+					// if(npc.parasite) {
+					// 	parasiteCount--;
+					// 	// console.log(totalParasiteCount - parasiteCount);
+					// 	for(let i=0; i < totalParasiteCount - parasiteCount; i++) {
+					// 		parasites.push(
+					// 			{ born: now, x: npc.x, y: npc.y, move: {dx: Math.random()-.5, dy: Math.random()-.5} },
+					// 		);
+					// 	}
+					// }
+
+//					console.log(npc);
+				}
+			}			
+
+			{
+				const speed = 3;
 				let { dx, dy } = parasite.move;
 				let dist = Math.sqrt(dx * dx + dy * dy);
 				if (dist) {
@@ -1363,12 +1464,12 @@ const Game = function() {
 
 
 					if (parasite.blocked < 100) {
-						if (blocked(parasite.x + realDx, parasite.y + realDy, true)) {
-							if (!blocked(parasite.x + parasite, parasite.y - realDy, true)) {
+						if (blocked(parasite.x + realDx, parasite.y + realDy, false)) {
+							if (!blocked(parasite.x + realDx, parasite.y - realDy, false)) {
 								realDy = -realDy;
 								parasite.move.dy = -dy;
 								parasite.blocked++;
-							} else if(!blocked(parasite.x - realDx, parasite.y + realDy, true)) {
+							} else if(!blocked(parasite.x - realDx, parasite.y + realDy, false)) {
 								realDx = -realDx;
 								parasite.move.dx = -dx;
 								parasite.blocked++;
@@ -1439,7 +1540,19 @@ const Game = function() {
 				const { dx, dy } = lastShot;
 				const [width, height] = settings.size;
 				let shot = false;
-				if(!dx) {	//	SHOOTING VERTICAL
+				if(dx && dy) {
+					if(dy * (npc.y - lastShot.y) > 0 && dx * (npc.x - lastShot.x) > 0) {
+						//console.log((npc.x -lastShot.x) - (npc.y-lastShot.y));
+						if((npc.x -lastShot.x) - (npc.y-lastShot.y) < SHOOTING_AREA_X + SHOOT_MARGIN_Y) {
+							shot = now;
+						}
+					}
+//					console.log((npc.x -lastShot.x) / (npc.y-lastShot.y));
+					// const alignY = npc.y + dx * npc.x;
+					// if (dx * (npc.x - lastShot.x) > 0 && Math.abs(alignY- 16 - lastShot.y) < SHOOTING_AREA_Y && onScreen(npc)) {
+					// 	shot = now;
+					// }					
+				} else if(!dx) {	//	SHOOTING VERTICAL
 					if (dy * (npc.y - lastShot.y) > 0 && Math.abs(npc.x - lastShot.x) < SHOOTING_AREA_X && onScreen(npc)) {
 						shot = now;
 					}
@@ -1456,20 +1569,37 @@ const Game = function() {
 					lastKilled.parasite = npc.parasite;
 					shotNpc = npc;
 					npc.shot = now;
+					if(!npc.parasite) {
+						if(heartCount<= 0) {
+							console.log('here');
+							lost = true;
+//							timeFreeze = true;
+						}
+						heartCount--;
+						npcCount --;
+					}
 					lastShot.target = npc;
 					//timeFreeze = true;
 					for(let i=0; i<10; i++) {
 						particles.push([dx===0 ? lastShot.x : npc.x, dy===0 ? lastShot.y : npc.y, (Math.random() -.5) * 3 + lastShot.dx, (Math.random()-.5) * 2 + lastShot.dy]);
 					}
 
-					// if(npc.parasite) {
-					// 	parasiteCount--;
-					// 	for(let i=0; i < totalParasiteCount - parasiteCount; i++) {
-					// 		parasites.push(
-					// 			{ born: now, x: npc.x, y: npc.y, move: {dx: Math.random()-.5, dy: Math.random()-.5} },
-					// 		);
-					// 	}
-					// }
+					if(npc.parasite) {
+						parasiteCount--;
+						// console.log(totalParasiteCount - parasiteCount);
+						let dx = Math.random()-.5, dy = Math.random()-.5;
+						for(let i=0; i < totalParasiteCount - parasiteCount; i++) {
+							ppCount++;
+							parasites.push(
+								{ born: now, x: npc.x, y: npc.y, move: {dx, dy} },
+							);
+							// if(dx * dy > 0) {
+							// 	dx = -dx;
+							// } else {
+							// 	dy = -dy;
+							// }
+						}
+					}
 
 //					console.log(npc);
 				}
@@ -1553,7 +1683,7 @@ const Game = function() {
 				let { dx, dy } = npc.move;
 
 
-				const goThroughWall = npc.husband && garyScared>=3 && hero.gun;
+				const goThroughWall = npc.husband && garyScared>=2 && hero.gun;
 				if(goThroughWall) {
 					dx = door.x + 10 - npc.x;
 					dy = door.y + 50 - npc.y;
@@ -1643,34 +1773,34 @@ const Game = function() {
 		if(npc.shot) {
 			return [
 				'group', x, y, {}, [
-					[npc.parasite ? 'parasite-exit' : 'npc-dead', OFFSET_X, OFFSET_Y, {animated: true, color: comboColor, flip: dx>0, animationStart: npc.shot }],
+					[npc.parasite ? 'parasite-exit' : 'npc-dead', OFFSET_X, OFFSET_Y, {animated: !lost, color: comboColor, flip: dx>0, animationStart: npc.shot }],
 				],
 			];
 		}
 
 
-		let head = [headSprite, OFFSET_X, OFFSET_Y +-26, {animated: moveDist, color: skinColor, flip: npc.husband ? faceDx>0 : false }];
+		let head = [headSprite, OFFSET_X, OFFSET_Y +-26, {animated: !lost && moveDist, color: skinColor, flip: npc.husband ? faceDx>0 : false }];
 
 
 		if (!dx) {
 			if (dy < 0) {
-				body = [character['body-up'], OFFSET_X, OFFSET_Y, {animated: moveDist, color: comboColor}];
+				body = [character['body-up'], OFFSET_X, OFFSET_Y, {animated:  !lost &&moveDist, color: comboColor}];
 			} else if(dy > 0) {
-				body = [character['body-down'], OFFSET_X, OFFSET_Y, {animated: moveDist, color: comboColor}];
+				body = [character['body-down'], OFFSET_X, OFFSET_Y, {animated:  !lost &&moveDist, color: comboColor}];
 			} else {
-				body = [character['body-down'], OFFSET_X, OFFSET_Y, {animated: moveDist, color: comboColor}];
+				body = [character['body-down'], OFFSET_X, OFFSET_Y, {animated:  !lost &&moveDist, color: comboColor}];
 			}
 		} else {
 			if (dx < 0) {
-				body = [character['body-left'], OFFSET_X, OFFSET_Y, {animated: moveDist, color: comboColor}];
+				body = [character['body-left'], OFFSET_X, OFFSET_Y, {animated:  !lost &&moveDist, color: comboColor}];
 			} else {
-				body = [character['body-right'], OFFSET_X, OFFSET_Y, {animated: moveDist, flip: !npc.gun && dx>0, color: comboColor}];
+				body = [character['body-right'], OFFSET_X, OFFSET_Y, {animated:  !lost &&moveDist, flip: !npc.gun && dx>0, color: comboColor}];
 			}
 		}
 
 		if (dy >= 0 || npc.husband || inFinalFinal && npc===hero) {
 			const faceOffsetX = dy===0 ? (faceDx < 0 ? 4 : 5) : (faceDx < 0 ? 1 : 2);
-			face = [character['face'], OFFSET_X + faceDx * faceOffsetX, OFFSET_Y -26 + faceDy, {animated: true, animMove: moveDist, flip: faceDx>0}];
+			face = [character['face'], OFFSET_X + faceDx * faceOffsetX, OFFSET_Y -26 + faceDy, {animated:  !lost, animMove:  !lost &&moveDist, flip: faceDx>0}];
 			let shouldTalk = !memoryLanes() && npc.talking && now - npc.talking < lastMessage.length * SPEECH_SPEED;
 			
 			if(inFinalFinal && finalChat < FINALCHATS.length) {
@@ -1697,13 +1827,13 @@ const Game = function() {
 			}
 
 			mouth = [character['mouth'], OFFSET_X + faceDx * faceOffsetX, OFFSET_Y -26 + faceDy, {
-				animated: shouldTalk, flip: faceDx>0, animMove: moveDist,
+				animated:  !lost && shouldTalk, flip: faceDx>0, animMove:  !lost &&moveDist,
 				frame: inFinal ? 2 : (hero.gun || npc!==hero && (justPutGunDown && now - justPutGunDown < 2000 || showGun() || !lastKilled.parasite && lastKilled.time && now - lastKilled.time < 60000) ? (npc===hero ? 2 : npc.id % 3 + 1) : 0),
 			}];
 		}
 
 		if (bodyColor==='nude' && body[0]===character['body-down']) {
-			downThere = [npc.gender || 'penis', OFFSET_X, OFFSET_Y, {animated: moveDist}];
+			downThere = [npc.gender || 'penis', OFFSET_X, OFFSET_Y, {animated: !lost && moveDist}];
 		}
 
 		const bubble = !inFinalMoment && !hero.gun && npc === npcToTalk && !talking ? ['bubble', OFFSET_X - 5, OFFSET_Y - 30, {}] : 0;
@@ -1745,9 +1875,10 @@ const Game = function() {
 		return discussionTopic == "MEMORY";
 	}
 
-
+	let lost = DEBUG.lost;
 	const sprites = [];
 	function getSprites(now) {
+
 		sprites.length = 0;
 		if(skipOnce) {
 			skipOnce = false;
@@ -1797,6 +1928,7 @@ const Game = function() {
 				}
 			}
 		});
+
 		if (talking && npcToTalk && finalChat < FINALCHATS.length) {
 			const LETTER_BOX_SIZE = Math.min(70, (now - talking) / 8);
 			if(!inFinal) {
@@ -1853,14 +1985,24 @@ const Game = function() {
 				sprites.push(['rect',0, 0, { width: settings.size[0], height: LETTER_BOX_SIZE, zOrder: 2 }]);
 				sprites.push(['rect',0, settings.size[1] - LETTER_BOX_SIZE, { width: settings.size[0], height: LETTER_BOX_SIZE, zOrder: 2 }]);
 				sprites.push(['gun', settings.size[0] - 50, settings.size[1] - 30, { zOrder: 3}]);
-				sprites.push(['text', 10, 25, { text: "ESC: PUT AWAY THE GUN\nSPACE: SHOOT", zOrder: 3, color: '#FFFFFF'}]);
+//				if (ppCount === 0) {
+					sprites.push(['text', 10, 18, { text: "ESC: PUT AWAY THE GUN", zOrder: 3, color: '#FFFFFF'}]);
+//				}
+				sprites.push(['text', 10, 30, { text: "SPACE: SHOOT", zOrder: 3, color: '#FFFFFF'}]);
 			}
 			if(!inFinal) {
-				sprites.push(['text', settings.size[0] - 40, 27, {text: parasiteCount, zOrder: 3, color: '#29b8b8', fontSize: 20}])
+//				sprites.push(['text', settings.size[0] - 30, 27, {text: npcCount, zOrder: 3, color: '#cc5555', fontSize: 16}])
+				// sprites.push(['text', settings.size[0] - 60, 27, {text: parasiteCount, zOrder: 3, color: '#cccccc', fontSize: 16}])
+				// if (ppCount) {
+				// 	sprites.push(['text', settings.size[0] - 90, 27, {text: ppCount, zOrder: 3, color: '#29b8b8', fontSize: 16}])
+				// }
+				for(let i=0; i<heartCount; i++) {
+					sprites.push(['heart', settings.size[0] - 20 * (i+ 1), 7, { zOrder: 3 }]);			
+				}
 			}
 
-			if(shooting(now) && !lastShot.target) {
-				sprites.push(makeBullet(lastShot, scroll));
+			if(shooting(now) && lastShot && lastShot.size > 0) {
+				sprites.push(makeBullet(lastShot, scroll, lastShot.target));
 			}
 		}
 		particles.forEach(particle => {
@@ -1869,7 +2011,11 @@ const Game = function() {
 
 		parasites.forEach(parasite => {
 			if(now - parasite.born > 700) {
-				sprites.push(['parasite-run', scroll.x + parasite.x, scroll.y + parasite.y, {animated: true }]);
+				if(parasite.shot) {
+					sprites.push(['parasite-dead', scroll.x + parasite.x, scroll.y + parasite.y, {animated: true, animationStart: parasite.shot }]);
+				} else {
+					sprites.push(['parasite-run', scroll.x + parasite.x, scroll.y + parasite.y, {animated:  !lost }]);
+				}
 			}
 		});
 
@@ -1882,8 +2028,8 @@ const Game = function() {
 			}			
 		}
 
-		if(finalEnding === 'LEAVE') {
-			sprites.push(['text', 0, 600-(now - gameOver - 10000) / 120, {text: 				
+		if(finalEnding === 'LEAVE' && gameOver) {
+			sprites.push(['text', 0, 1000-(now - gameOver - 9000) / 120, {text: 				
 				'    This game was produced for\n\n'+
 				'        TV Game Jam 2019\n'+
 				'\n'+
@@ -2001,6 +2147,16 @@ const Game = function() {
 				,
 				zOrder: 3, color: '#ffffff', outline: '#000000', fontSize: 20}]);
 		}
+
+		if(lost) {
+			sprites.push(
+				['text', 30, 120, {text: "GAME OVER" ,color: "white", outline: 'black', fontSize: 40, zOrder: 3}],
+				['text', 65, 160, {text: "ESC to RESTART" ,color: "white", outline: 'black', fontSize: 20, zOrder: 3}],
+			);
+		}
+
+
+
 		return sprites;
 	}
 
@@ -2067,13 +2223,22 @@ const Game = function() {
 	const particles = [
 	];
 
-	function makeBullet(lastShot, scroll) {
+	function makeBullet(lastShot, scroll, target) {
 		const { dx, dy } = lastShot;
-		const [width, height] = settings.size;
-		return ['rect', scroll.x + lastShot.x  + (dx<0 ? -width : 0), scroll.y + lastShot.y -16 + (dy<0 ? -height:0), {
+		let size = lastShot.size;
+		// if(target) {
+		// 	size = Math.min(Math.abs(lastShot.x - target.x), Math.abs(lastShot.y - target.y));
+		// }
+		if(dx && dy) {
+			return ['line', scroll.x + lastShot.x, scroll.y + lastShot.y - 16, {
+				zOrder: 1,
+				xMove: size * dx, yMove: size * dy, color: 'white', lineWidth: 3,
+			}];
+		}
+		return ['rect', scroll.x + lastShot.x  + (dx<0 ? -size : 0), scroll.y + lastShot.y -16 + (dy<0 ? -size:0), {
 			zOrder: 1,
-			width: dy == 0 ? width : 3,
-			height: dx == 0 ? height : 3,
+			width: dy == 0 ? size : 3,
+			height: dx == 0 ? size : 3,
 			color: 'white',
 		}];
 	}
@@ -2137,7 +2302,7 @@ const Game = function() {
 				['text', 20, 0, { text: 'Will you take me down memory lane?', speechSpeed: SPEECH_SPEED, color: memoryLanes() ? '#444444' : 'white', outline: '#222222'}],
 				['text', 20, 15, { text: 'Who are you again?', speechSpeed: SPEECH_SPEED, color: whoAreYou() ? '#444444' : 'white', outline: '#222222'}],
 				['text', 20, 30, { text: 'Goodbye', speechSpeed: SPEECH_SPEED, color: 'white', outline: '#222222'}],
-				['pointer', -16, 8 - chatIndex * 15, { animated: true }],
+				['pointer', -16, 8 - chatIndex * 15, { animated:  !lost }],
 			],
 		];
 	}
@@ -2253,8 +2418,8 @@ const Game = function() {
 				repeat: 1,
 				count: 8,
 			}],
-			['parasite-run.png', 32, 32, {
-				offset: {x:-16, y:-32}
+			['parasite-run.png', 40, 40, {
+				offset: {x:-20, y:-40}
 			}],
 			['pointer.png', 32, 32, {
 				count: 11,
@@ -2330,6 +2495,12 @@ const Game = function() {
 				repeat: 1,
 			}],
 			['the-end.png', 320, 256],
+			['parasite-dead.png', 40, 40, {
+				count: 6,
+				repeat: 1,
+				offset: {x:-20, y:-40},
+			}],
+			['heart.png', 32, 32],
 
 
 			["spring_sprinkle.mp3", 1, loop, true],

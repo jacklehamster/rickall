@@ -18,6 +18,9 @@ const Engine = function(document, Game) {
 		'rect': {
 			type: 'rect',
 		},
+		'line': {
+			type: 'line',
+		},
 	};
 
 	let skipOneFrame = false;
@@ -672,9 +675,28 @@ const Engine = function(document, Game) {
 							renderRect(sprite, definition, groupX + x, groupY + y, now, option || {});
 						}
 						break;
+					case 'line':
+						{
+							const [ , xFormula, yFormula, option ] = sprite;
+							const x = evaluate(xFormula, option);
+							const y = evaluate(yFormula, option);
+							renderLine(sprite, definition, groupX + x, groupY + y, now, option || {});
+						}
+						break;
 				}
 			}
 		});
+	}
+
+	function renderLine(sprite, definition, x, y, now, option) {
+		const { xMove, yMove, color} = option;
+		//console.log(x, y, xMove, yMove);
+		ctx.strokeStyle = evaluate(color, sprite) || 'black';
+		ctx.lineWidth = evaluate(option.lineWidth, sprite) || 3;
+		ctx.beginPath();
+		ctx.moveTo(x, y);
+		ctx.lineTo(x + xMove, y + yMove);
+		ctx.stroke();
 	}
 
 	function renderRect(sprite, definition, x, y, now, option) {
