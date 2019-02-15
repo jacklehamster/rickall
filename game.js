@@ -260,7 +260,7 @@ const Game = function() {
 	}
 
 	const HEADS = ['cone-head', 'npc-head', 'round-head'];
-	const HAIRS = [null, 'orange-hair', 'pony-tail', 'bowl-hair', 'spike-hair', 'skin-head'];
+	const HAIRS = [null, null, null, null, null, 'orange-hair', 'pony-tail', 'bowl-hair', 'spike-hair'];
 	const BEARDS = [null, null, null, null, null, null, null, 'beard'];
 
 	let scroll = { x: 0, y: 0 };
@@ -300,6 +300,8 @@ const Game = function() {
 	const HAIR_COLORS = [
 		{ name: 'default' },
 		{ name: 'ginger', 0xff7c00: 0x90402f },
+		{ name: 'blond', 0xff7c00: 0xdadd21 },
+		{ name: 'brown', 0xff7c00: 0x292910 },
 		{ name: 'blond', 0xff7c00: 0xdadd21 },
 		{ name: 'brown', 0xff7c00: 0x292910 },
 		{ name: 'pink', 0xff7c00: 0xff5ccf },
