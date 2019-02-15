@@ -451,7 +451,7 @@ const Game = function() {
 				dy: Math.round(2*(Math.random()-.5)),
 			};
 			const husband = npcHusband(index);
-			const parasite = !husband && index % 3 === 1;
+			const parasite = !husband && index < NPC_COUNT / 3;
 			if (parasite) {
 				parasiteCount++;
 			}
