@@ -1,6 +1,6 @@
 const Game = function() {
 	const DEBUG = {
-		canExit: false,
+		canExit: true,
 		shortExit: false,
 		gunnow: false,
 		timeFreeze: false,
@@ -117,12 +117,15 @@ const Game = function() {
         "That remind me of when {name} and us went to see Toy Story on Ice! Buzz Lightyear looked really nice on skates!",
         "One time we went to Coachella with {name}! Ghandi played guitar with Bob Marley and they invited {name} to do a drum solo!",
         "One summer we all went to Hawaii. We drank Piña Coladas and {name} won a surfing contest!",
+        "Last time we went to the Summer Olympics was intense! {name} got invited to swim in the 100 meter relay and won Gold!",
+        "Remember when we went to Las Vegas to play Eye-Spy? {name} won $6,000,000 on the first day!",
+        "It reminds me of that roadtrip we took to The Mall of America. {name} won a free pretzel and we all bought matching Yo-Yos!",
 	];
 
 	const BAD_MEMORIES = [
 		"You remember that time you all went to Magic Mountain on that giant rollercoaster. {name} vomitted his lunch all over your pants, all the way down.",
 		"You remember that wonderful day on an excursion on top of the replica of Titanic boat. {name} thought it'd be funny to push you overboard. You spent the rest of the day at the hospital.",
-		"You remember that romantic night on top of Lover's Hill, sitting in a car with {name} and watching the sunset. {name} farted, but we couldn't open the window as it was too cold.",
+		"You remember that romantic night on top of Lover's Hill, sitting in a car with {name} and watching the sunset. {name} farted, but we didn't open the window because it was too cold.",
 		"You remember when you got kidnapped by gangsters and {name} went to your rescue. You found out those were all actors and this was all a ruse for {name} to pretend he was heroic!",
 		"You remember the romantic dinner with {name} at a very fancy Korean restaurant. You spend the majority of it by yourself, waiting for {name} to come out of the restroom.",
 		"You remember when you went home to visit your parents and introduced {name} to them. {name} got the toilet stuck with a big giant turd and your mom had to spend the night unplugging it.",
@@ -132,6 +135,9 @@ const Game = function() {
         "That remind me of when {name} and us went to see Toy Story on Ice! Woody got high on bath salts and ate Mr. Potato Head, we didn't get a refund...",
         "One time we went to Coachella with {name}! Limp Bizkit played 5 sets and we all caught Typhoid fever!",
         "One summer we all went to Hawaii. {name} broke their leg and we had to sell their plasma for plane tickets home...",
+        "Last time we went to the Summer Olympics was intense! {name} sneezed on Michael Phelps and he got a lung infection and drowned!",
+        "Remember when we went to Las Vegas to play Eye-Spy? {name} offended the mob bosses and we all got our legs broken...",
+        "It reminds me of that roadtrip we took to The Mall of America. {name} got caught in the escalator... they still have to poop in a bag...",
 	];
 
 
