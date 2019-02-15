@@ -1577,6 +1577,7 @@ const Game = function() {
 						}
 						heartCount--;
 						npcCount --;
+						Engine.playSound('hit');
 					}
 					lastShot.target = npc;
 					//timeFreeze = true;
