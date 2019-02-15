@@ -89,12 +89,20 @@ const Game = function() {
 		"You remember that time you all went to Magic Mountain on that giant rollercoaster. What a fun time you had with {name}!",
 		"You remember that wonderful day on an excursion on top of the replica of the Titanic boat. You spread your arms as {name} was holding you and felt lying flying.",
 		"You remember that romantic night on top of Lover's Hill, sitting in a car with {name} and watching the sunset. You fell sound asleep tucked in {name}'s arms.",
+		"You remember when you got kidnapped by gangsters and {name} went to your rescue. What a heroic gesture!",
+		"You remember the romatic dinner with {name} at a very fancy Korean restaurant. You tasted many delicous dish and didn't gain a pound.",
+		"You remember when you went home to visit your parents and introduced {name} to them. They were so esctatic!",
+		"You remember going to the movie theater with {name} to watch Star Wars. You both snuggled during a scene with Chewbacca.",
 	];
 
 	const BAD_MEMORIES = [
-		"You remember that time you all went to Magic Mountain on that giant rollercoaster. {name} vomitted his lunch all over your pants on the way down.",
+		"You remember that time you all went to Magic Mountain on that giant rollercoaster. {name} vomitted his lunch all over your pants, all the way down.",
 		"You remember that wonderful day on an excursion on top of the replica of Titanic boat. {name} thought it'd be funny to push you overboard. You spent the rest of the day at the hospital.",
 		"You remember that romantic night on top of Lover's Hill, sitting in a car with {name} and watching the sunset. {name} farted, but we couldn't open the window as it was too cold.",
+		"You remember when you got kidnapped by gangsters and {name} went to your rescue. You found out those were all actors and this was all a ruse for {name} to pretend he was heroic!",
+		"You remember the romantic dinner with {name} at a very fancy Korean restaurant. You spend the majority of it by yourself, waiting for {name} to come out of the restroom.",
+		"You remember when you went home to visit your parents and introduced {name} to them. {name} got the toilet stuck with a big giant turd and your mom had to spend the night unplugging it.",
+		"You remember goint to the movie theater with {name} to watch Star Wars. {name} kept yelling at the screen and cursing George Lucas during every scene with Jar Jar Binks.",
 	];
 
 
