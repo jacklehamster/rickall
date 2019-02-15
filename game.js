@@ -1,6 +1,6 @@
 const Game = function() {
 	const DEBUG = {
-		canExit: true,
+		canExit: false,
 		shortExit: false,
 		gunnow: false,
 		timeFreeze: false,
