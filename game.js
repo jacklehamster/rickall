@@ -1157,7 +1157,7 @@ const Game = function() {
 	function performActions(now) {
 		if(lost) {
 			if(Keyboard.action.cancel && !restarting) {
-				if(now - lost > 5000) {
+				if(now - lost > 3000) {
 					restarting = true;
 					location.reload();
 				}
@@ -1426,6 +1426,7 @@ const Game = function() {
 //							timeFreeze = true;
 						}
 						heartCount--;
+						Engine.playSound('hit');
 					}
 				} else if (distHero < 60) {
 					// if (dx * parasite.move.dx >= 0 && dy * parasite.move.dy >= 0) {
@@ -1614,7 +1615,7 @@ const Game = function() {
 //					console.log(npc.y, lastShot.y, npc.y - 16 - lastShot.y);
 				}
 				if(shot) {
-					Engine.playSound('parasite_die');
+//					Engine.playSound('parasite_die');
 					lastKilled.time = now;
 					lastKilled.npc = npc;
 					lastKilled.parasite = npc.parasite;
@@ -1637,6 +1638,7 @@ const Game = function() {
 					}
 
 					if(npc.parasite) {
+						Engine.playSound('parasite_die');
 						parasiteCount--;
 						// console.log(totalParasiteCount - parasiteCount);
 						let dx = Math.random()-.5, dy = Math.random()-.5;
@@ -2245,9 +2247,9 @@ const Game = function() {
 			sprites.push(
 				['text', 30, 120, {text: "GAME OVER" ,color: "white", outline: 'black', fontSize: 40, zOrder: 3}],
 			);
-			if(now - lost > 5000 && Math.floor(now / 200) % 3 !== 0) {
+			if(now - lost > 3000 && Math.floor(now / 200) % 3 !== 0) {
 				sprites.push(
-					['text', 65, 160, {text: "ESC to RESTART" ,color: "white", outline: 'black', fontSize: 20, zOrder: 3}],
+					['text', 65, 160, {text: "ESC TO RESTART" ,color: "white", outline: 'black', fontSize: 20, zOrder: 3}],
 				);				
 			}
 		}
