@@ -36,8 +36,9 @@ const Game = function() {
 		'milkman', 'neighbor', 'worst nightmare',
 		'cousin', 'brother', 'sister', "buddy", "favorite actor",
 		"biggest fan", "first love", 'waitress', 'butler', 'babysitter',
-		'janitor', 'landlord', 'doctor', 'lawyer', 'old pal',
-		'servant', 'boss',
+		'janitor', 'landlord', 'doctor', 'divorce lawyer', 'old pal',
+		'servant', 'boss', "fiduciary", "slumlord", "bodyguard",
+        'nextdoor neighbor', 'wrestling coach', 'middle school English teacher',
 	];
 
 	const LOCATIONS = [
@@ -47,7 +48,8 @@ const Game = function() {
 		"at the Marriot", "at the police station", "at the convention center",
 		"on the airplane", "at the concert", "in the car",
 		"with your friends", "in front of everybody", "in Vietnam", "at the hospital",
-		"in my dreams",
+		"in my dreams", "at your mom's house", "at a potluck",
+        "during the '80s", "at Spencer's Gifts",
 	];
 
 	const HOBBY = [
@@ -55,27 +57,44 @@ const Game = function() {
 		'an argument', 'a lot of fun', 'a long conversation',
 		'boardgames', 'a little chat', 'a fight', 'fish and chips',
 		'lasagna', 'pasta', 'Korean food', "a joint", "drugs",
-		"a sandwich", "ice cream", "tiramisu", "too much drinks",
+		"a sandwich", "ice cream", "tiramisu", "too much to drink",
 		"discovered something amazing", 'the Impossible Burger',
-		'fifty donuts', "a thing",
+		'fifty donuts', "a thing", "a tickle-fight", "sexual chemistry",
+        "a moment of silence", "parent/teacher conference", "an obligation to do the right thing"
 	];
 
 	const TIME = [
 		'monday', 'weekend', 'month', 'tuesday', 'wednesday', 'thursday', 'friday', 'time',
-		'week', 'year', 'Christmas', 'time we met', "night",
+		'week', 'year', 'Christmas', 'time we met', "night", "solstice", "freshman year",
+        "high noon", "Burning Man", "Republican National Convention",
 	];
 
 	const RANDOM_COMMENT = [
 		'What a fun time that was...', 'Ah the good memories...', 'Life is so short...',
 		"I'll never forget...",
+		"It's almost like it was yesterday...", "I can see it now...",
 	];
+
+    const INTRO = [
+        "You don't recognize me? I am",
+        "Huh? You are so forgetful! I'm",
+        "Haha! Stop joking around! You know me, I'm",
+        "You are such a narcissist! I am",
+        "Ugh! AWKWARD! I'm",
+        "Aha! *WIINK* Pleased to meet you. I am",
+        "WHAT? You are vapid! I am",
+        "Come on... this is the third time. I am",
+        "Dude! Take it easy on the vape pen! I am",
+        "You forgot my name? So rude! I am",
+        "Wow, nice power play! I am",
+    ];
 
 	function makeCap(string) {
 		return string.charAt(0).toUpperCase() + string.substr(1).toLowerCase();
 	}
 
 	function randomIntroduction(id, name, occupation) {
-		return "You don't recognize me? I am " 
+		return INTRO[(id + 999) % INTRO.length] + " "
 			+ name
 			+ " your "
 			+ occupation
@@ -90,9 +109,14 @@ const Game = function() {
 		"You remember that wonderful day on an excursion on top of the replica of the Titanic boat. You spread your arms as {name} was holding you and felt lying flying.",
 		"You remember that romantic night on top of Lover's Hill, sitting in a car with {name} and watching the sunset. You fell sound asleep tucked in {name}'s arms.",
 		"You remember when you got kidnapped by gangsters and {name} went to your rescue. What a heroic gesture!",
-		"You remember the romatic dinner with {name} at a very fancy Korean restaurant. You tasted many delicous dish and didn't gain a pound.",
-		"You remember when you went home to visit your parents and introduced {name} to them. They were so esctatic!",
+		"You remember the romatic dinner with {name} at a very fancy Korean restaurant. You tasted many delicous dishes and didn't gain a pound.",
+		"You remember when you went home to visit your parents and introduced {name} to them. They were so ecstatic!",
 		"You remember going to the movie theater with {name} to watch Star Wars. You both snuggled during a scene with Chewbacca.",
+        "Oh, there was that one time when {name} was getting married. We sang karoake and danced all night long!",
+        "Of course your {name}'s 21st birthday party was crazy! Everyone did Jello shots and danced to Soulja Boy!",
+        "That remind me of when {name} and us went to see Toy Story on Ice! Buzz Lightyear looked really nice on skates!",
+        "One time we went to Coachella with {name}! Ghandi played guitar with Bob Marley and they invited {name} to do a drum solo!",
+        "One summer we all went to Hawaii. We drank Piña Coladas and {name} won a surfing contest!",
 	];
 
 	const BAD_MEMORIES = [
@@ -102,7 +126,12 @@ const Game = function() {
 		"You remember when you got kidnapped by gangsters and {name} went to your rescue. You found out those were all actors and this was all a ruse for {name} to pretend he was heroic!",
 		"You remember the romantic dinner with {name} at a very fancy Korean restaurant. You spend the majority of it by yourself, waiting for {name} to come out of the restroom.",
 		"You remember when you went home to visit your parents and introduced {name} to them. {name} got the toilet stuck with a big giant turd and your mom had to spend the night unplugging it.",
-		"You remember goint to the movie theater with {name} to watch Star Wars. {name} kept yelling at the screen and cursing George Lucas during every scene with Jar Jar Binks.",
+		"You remember going to the movie theater with {name} to watch Star Wars. {name} kept yelling at the screen and cursing George Lucas during every scene with Jar Jar Binks.",
+        "Oh, there was that one time when {name} was getting married. The bride's mother died from eating undercooked shellfish!",
+        "Of course your {name}'s 21st birthday party was crazy! {name} tried to butt-chug a beer and we had to call an ambulance...",
+        "That remind me of when {name} and us went to see Toy Story on Ice! Woody got high on bath salts and ate Mr. Potato Head, we didn't get a refund...",
+        "One time we went to Coachella with {name}! Limp Bizkit played 5 sets and we all caught Typhoid fever!",
+        "One summer we all went to Hawaii. {name} broke their leg and we had to sell their plasma for plane tickets home...",
 	];
 
 
@@ -118,6 +147,9 @@ const Game = function() {
 			"Did you find a parasite yet?",
 			"There are so many people here.",
 			"I don't recognize half the people in this room.",
+            "I didn't fight in a war just to let parasites in our homes.",
+            "I don't remember the line to the bathroom always being this long...",
+            "I'm so glad we aren't parasites. So GROSS!",
 		].map(wrapText),
 		"justKilled": [
 			"Who would have thought {name} was a parasite?",
@@ -126,6 +158,7 @@ const Game = function() {
 			"I knew that was a parasite. That looked definitely suspicious.",
 			"I remember all the good times with {name}. Who would have thought those were fake!",
 			"Isn't weird, I can't recall anything I disliked about {name}.",
+            "Of course that was a parasite. Only a parasite would think otherwise.",
 		].map(wrapText),
 		"justKilledHuman": [
 			"Hey careful where you point that gun.",
