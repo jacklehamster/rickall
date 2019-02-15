@@ -420,7 +420,7 @@ const Game = function() {
 	}
 
 	const HEADS = ['cone-head', 'npc-head', 'round-head'];
-	const HAIRS = ['bald', 'bald', 'bald', 'bald', 'bald', 'orange-hair', 'pony-tail', 'bowl-hair', 'spike-hair'];
+	const HAIRS = ['bald', 'bald', 'bald', 'bald', 'bald', 'orange-hair', 'pony-tail', 'bowl-hair', 'spike-hair', 'rick-hair'];
 	const BEARDS = [null, null, null, null, null, null, null, 'beard'];
 
 	let scroll = { x: 0, y: 0 };
@@ -461,10 +461,12 @@ const Game = function() {
 		{ name: 'default' },
 		{ name: 'ginger', 0xff7c00: 0x90402f },
 		{ name: 'blond', 0xff7c00: 0xdadd21 },
-		{ name: 'brown', 0xff7c00: 0x292910 },
 		{ name: 'blond', 0xff7c00: 0xdadd21 },
 		{ name: 'brown', 0xff7c00: 0x292910 },
+		{ name: 'brown', 0xff7c00: 0x292910 },
+		{ name: 'brown', 0xff7c00: 0x292910 },
 		{ name: 'pink', 0xff7c00: 0xff5ccf },
+		{ name: 'rick', 0xB4DFF5: 0xB4DFF5 },
 	];
 	const NUDE = BODY_COLORS.filter(a => a.name==='nude')[0];
 
@@ -2826,6 +2828,11 @@ const Game = function() {
 			['spike-hair.png', 32, 32, {
 				animOffset: WALK_ANIM_OFFSET,
 				colors: HAIR_COLORS,
+			}],
+			['rick-hair.png', 32, 32, {
+				animOffset: WALK_ANIM_OFFSET,
+				colors: HAIR_COLORS,
+				offset: {x: 0, y:-10},
 			}],
 			['skin-head.png', 32, 32, {
 				animOffset: WALK_ANIM_OFFSET,
