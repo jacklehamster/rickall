@@ -455,10 +455,11 @@ const Engine = function(document, Game) {
 	}
 
 	function resizeCanvas(canvas) {
-		pixelSize = Math.min(
-			Math.max(1, 2 * Math.floor(window.innerWidth / canvas.width)),
-			Math.max(1, 2 * Math.floor(window.innerHeight / canvas.height)),
-		) / 2;
+		// pixelSize = Math.min(
+		// 	Math.max(1, 2 * Math.floor(window.innerWidth / canvas.width)),
+		// 	Math.max(1, 2 * Math.floor(window.innerHeight / canvas.height)),
+		// ) / 2;
+		pixelSize = 2;
 		canvas.style.width = `${canvas.width * pixelSize}px`;
 		canvas.style.height = `${canvas.height * pixelSize}px`;
 		return canvas;
@@ -548,7 +549,7 @@ const Engine = function(document, Game) {
 
 	function setDebug(div) {
 		debugDiv = div;
-		if(!debug) {
+		if(debugDiv) {
 			debugDiv.style.display = "none";
 		}
 	}
