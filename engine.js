@@ -419,7 +419,7 @@ const Engine = function(document, Game) {
 			}
 		}
 		if(loop===true || loop===false) {
-			console.log(music.tag, loop);
+			//console.log(music.tag, loop);
 			music.audio.loop = loop;
 		}
 	}

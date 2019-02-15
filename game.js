@@ -14,7 +14,8 @@ const Game = function() {
 	const STRING_LIMIT = 29;
 	const LONG_STRING_LIMIT = 45;
 	const NPC_COUNT = 16;//100;
-	const SPEECH_SPEED = 30;
+	const DEFAULT_SPEECH_SPEED = 30;
+	let SPEECH_SPEED = DEFAULT_SPEECH_SPEED;
 	const loop = 'loop';
 	const IMMUNE_TIME = 5000;
 
@@ -144,7 +145,7 @@ const Game = function() {
 	const HOT_TOPICS = {
 		"normal": [
 			"At least, we both know we're not parasites.",
-			"There are still parasites among us.",
+			"There are still {parasite} parasites among us.",
 			"We both have lots of good memories together.",
 			"I'd love to chat with you and remember the good old times.",
 			"Can you believe, I've known you since childhood!",
@@ -156,6 +157,10 @@ const Game = function() {
             "I didn't fight in a war just to let parasites in our homes.",
             "I don't remember the line to the bathroom always being this long...",
             "I'm so glad we aren't parasites. So GROSS!",
+		    "I can feel there are {parasite} parasites in this room.",
+		    "If I count correctly, there must be {parasite} parasites left.",
+			"I've never had a bad memory with a parasite.",
+			"I heard you can only remember the good times with parasites.",
 		].map(wrapText),
 		"justKilled": [
 			"Who would have thought {name} was a parasite?",
@@ -165,6 +170,8 @@ const Game = function() {
 			"I remember all the good times with {name}. Who would have thought those were fake!",
 			"Isn't weird, I can't recall anything I disliked about {name}.",
             "Of course that was a parasite. Only a parasite would think otherwise.",
+            "I remembered {name} so fondly.",
+            "Good riddance! {name} was always so nice it was getting annoying. Or was it just a fake memory?",
 		].map(wrapText),
 		"justKilledHuman": [
 			"Hey careful where you point that gun.",
@@ -174,6 +181,8 @@ const Game = function() {
 			"{name} wasn't a parasite! You knew each other since forever!",
 			"Nice job cowboy. Maybe you think everyone's a parasite.",
 			"{name} will be missed.",
+			"{name} was a jerk, but didn't deserve that.",
+			"Not a big fan of {name}, but that was uncalled for.",
 		].map(wrapText),
 		"lastOne": [
 		].map(wrapText),
@@ -185,6 +194,7 @@ const Game = function() {
 	};
 
 	const songs = {};
+
 
 	const SPEED = .5;
 	const characters = {
@@ -251,6 +261,10 @@ const Game = function() {
 			'face': 'npc-face',
 			'mouth': 'npc-mouth',
 			'skinColor': 'pink',
+			// 'hair': 'bowl-hair',
+			// 'hairColor': 'pink',
+			// 'beard': 'beard',
+			// 'bodyColor': 'morty',
 		},
 		'gun': {
 			'body-up': 'npc-body-up-gun',
@@ -261,6 +275,10 @@ const Game = function() {
 			'face': 'npc-face',
 			'mouth': 'npc-mouth',
 			'skinColor': 'pink',
+			// 'hair': 'bowl-hair',
+			// 'hairColor': 'pink',
+			// 'beard': 'beard',
+			// 'bodyColor': 'morty',
 		},
 		'gunshooting': {
 			'body-up': 'npc-body-up-gun-shoot',
@@ -271,6 +289,10 @@ const Game = function() {
 			'face': 'npc-face',
 			'mouth': 'npc-mouth',
 			'skinColor': 'pink',
+			// 'hair': 'bowl-hair',
+			// 'hairColor': 'pink',
+			// 'beard': 'beard',
+			// 'bodyColor': 'morty',
 		},
 		'gary': {
 			'body-up': 'npc-body',
@@ -284,6 +306,97 @@ const Game = function() {
 			'bodyColor': 'gary',
 		},
 	};
+
+	const GENDERS = ['penis', 'vagina'];
+	const switchers = ['hair', 'hairColor', 'head', 'face', 'skinColor', 'bodyColor', 'beard', 'gender'];
+
+	function randomHero() {
+		index = Math.floor(Math.random()*1000000000);
+		for(let i=0; i<switchers.length; i++) {
+			changeHero(switchers[i], index + (i * 13373));
+		}
+	}
+
+	function changeHero(element, index) {
+		switch(element) {
+			case 'face':
+				{
+					const list = ['npc-face', 'mad-face', 'smart-face', 'pixie-face', 'morty-face', 'femme-face'];
+					value = list[(index+list.length) % list.length];
+					characters.hero[element] = value;
+					characters.gun[element] = value;
+					characters.gunshooting[element] = value;
+				}
+				break;
+			case 'head':
+				{
+					const list = HEADS;
+					value = list[(index+list.length) % list.length];
+					characters.hero[element] = value;
+					characters.gun[element] = value;
+					characters.gunshooting[element] = value;
+				}
+				break;
+			case 'skinColor':
+				{
+					const list = FACE_COLORS.map(a => a.name);
+					value = list[(index+list.length) % list.length];
+					characters.hero[element] = value;
+					characters.gun[element] = value;
+					characters.gunshooting[element] = value;
+				}
+				break;
+			case 'bodyColor':
+				{
+					const list = BODY_COLORS.map(a => a.name);
+					value = list[(index+list.length) % list.length];
+					characters.hero[element] = value;
+					characters.gun[element] = value;
+					characters.gunshooting[element] = value;
+				}
+				break;
+			case 'hairColor':
+				{
+					const list = HAIR_COLORS.map(a => a.name);
+					value = list[(index+list.length) % list.length];
+					characters.hero[element] = value;
+					characters.gun[element] = value;
+					characters.gunshooting[element] = value;
+				}
+				break;
+			case 'hair':
+				{
+					let list = HAIRS;
+					value = list[(index+list.length) % list.length];
+					characters.hero[element] = value;
+					characters.gun[element] = value;
+					characters.gunshooting[element] = value;
+				}
+				break;
+			case 'beard':
+				{
+					let list = BEARDS;
+					value = list[(index+list.length) % list.length];
+					characters.hero[element] = value;
+					characters.gun[element] = value;
+					characters.gunshooting[element] = value;
+				}
+				break;
+			case 'gender':
+				{
+					let list = GENDERS;
+					value = list[(index+list.length) % list.length];
+					characters.hero[element] = value;
+					characters.gun[element] = value;
+					characters.gunshooting[element] = value;
+				}
+				break;
+			default:
+				//console.log(element);
+		}
+	}
+
+
 
 	function wrapTextWithLimit(text, limit) {
 		const split = text.split("\n").join(" ").split("  ").join(" ").split(" ");
@@ -307,7 +420,7 @@ const Game = function() {
 	}
 
 	const HEADS = ['cone-head', 'npc-head', 'round-head'];
-	const HAIRS = [null, null, null, null, null, 'orange-hair', 'pony-tail', 'bowl-hair', 'spike-hair'];
+	const HAIRS = ['bald', 'bald', 'bald', 'bald', 'bald', 'orange-hair', 'pony-tail', 'bowl-hair', 'spike-hair'];
 	const BEARDS = [null, null, null, null, null, null, null, 'beard'];
 
 	let scroll = { x: 0, y: 0 };
@@ -326,8 +439,8 @@ const Game = function() {
 	const FACE_COLORS = [
 		{ name: 'default', 0xFFFFFF: 0xFFFFFF },
 		{ name: "pink", 0xFFFFFF: 0xFFEEEE },
-		{ name: "yellow", 0xFFFFFF: 0xFFFFCC },
 		{ name: "black", 0xFFFFFF: 0x994444, outline: 'white' },
+		{ name: "yellow", 0xFFFFFF: 0xFFFFCC },
 		{ name: "orange", 0xFFFFFF: 0xEE9966 },
 		{ name: "blue", 0xFFFFFF: 0x88EEDD },
 	];
@@ -518,7 +631,7 @@ const Game = function() {
 				npcCount++;
 			}
 			const beard = husband ? null : getRandom(BEARDS);
-			const hair = husband ? null : getRandom(HAIRS);
+			const hair = husband ? 'bald' : getRandom(HAIRS);
 
 			return { 
 				id: index,
@@ -563,6 +676,7 @@ const Game = function() {
 		if(DEBUG.gunnow) {
 			hero.gun = 1;
 		}
+		waitUp = false;
 	}
 
 	function occupy(x, y, value) {
@@ -1395,8 +1509,8 @@ const Game = function() {
 										npcToTalk.move.dx = Math.floor(Math.random() * 3) - 1;
 										npcToTalk.move.dy = Math.floor(Math.random() * 3) - 1;		
 										npcToTalk.face = npcToTalk.move;	
-										talking = 0;		
-										Engine.setData('music', 'vick_n_vorty');				
+										talking = 0;
+										Engine.setData('music', 'vick_n_vorty');
 									}
 									break;
 								}
@@ -1866,6 +1980,8 @@ const Game = function() {
 		const skinColor = npc.skinColor || character.skinColor || 'default';
 		const bodyColor = npc.bodyColor || character.bodyColor || 'default';
 		const hairColor = npc.hairColor || character.hairColor || 'default';
+		const beard = npc.beard || character.beard || null;
+		const hair = npc.hair || character.hair || 'bald';
 		const comboColor = skinColor + '-' + bodyColor;
 		let face = null;
 		let body = null;
@@ -1873,7 +1989,7 @@ const Game = function() {
 		let downThere = null;
 		let fronthair = null;
 		let backhair = null;
-		let beard;
+		let beardSprite;
 		const size = option ? option.size : null;
 
 		if(npc.shot) {
@@ -1937,31 +2053,31 @@ const Game = function() {
 				frame: inFinal ? 2 : (hero.gun || npc!==hero && (justPutGunDown && now - justPutGunDown < 2000 || showGun() || !lastKilled.parasite && lastKilled.time && now - lastKilled.time < 60000) ? (npc===hero ? 2 : npc.id % 3 + 1) : 0),
 			}];
 
-			beard = npc.beard ? [npc.beard, OFFSET_X, OFFSET_Y -26 + faceDy, {
+			beardSprite = beard ? [beard, OFFSET_X, OFFSET_Y -26 + faceDy, {
 				animMove:  !DEBUG.freezeBody && !lost &&moveDist, color: hairColor,
 			}] : null;
 
-			fronthair = npc.hair ? [npc.hair,  OFFSET_X, OFFSET_Y -26 + faceDy, {
+			fronthair = hair && hair !== 'bald' ? [hair,  OFFSET_X, OFFSET_Y -26 + faceDy, {
 				animMove:  !DEBUG.freezeBody && !lost &&moveDist, color: hairColor,
 				frame: 0, flip: dx<0, 
 			}] : null;
 
-			backhair = npc.hair ?  [npc.hair,  OFFSET_X, OFFSET_Y -26 + faceDy, {
+			backhair = hair && hair !== 'bald'  ?  [hair,  OFFSET_X, OFFSET_Y -26 + faceDy, {
 				animMove:  !DEBUG.freezeBody && !lost &&moveDist, color: hairColor,
 				frame: 1, flip: dx<0, 
 			}] : null;
 
 		} else if (faceDy < 0) {
 			const faceOffsetX = dy===0 ? (faceDx < 0 ? 4 : 5) : (faceDx < 0 ? 1 : 2);
-			fronthair = [npc.hair,  OFFSET_X + faceDx * faceOffsetX, OFFSET_Y -26 + faceDy, {
+			fronthair = hair && hair !== 'bald'  ? [hair,  OFFSET_X + faceDx * faceOffsetX, OFFSET_Y -26 + faceDy, {
 				animMove:  !DEBUG.freezeBody && !lost &&moveDist, color: hairColor,
 				frame: 2,
-			}];
+			}] : null;
 			backhair = null;
 		}
 
 		if (bodyColor==='nude' && body[0]===character['body-down']) {
-			downThere = [npc.gender || 'penis', OFFSET_X, OFFSET_Y, {animated: !lost && moveDist}];
+			downThere = [(npc.gender || character.gender || 'penis'), OFFSET_X, OFFSET_Y, {animated: !lost && moveDist}];
 		}
 
 
@@ -1974,7 +2090,7 @@ const Game = function() {
 				head,
 				fronthair,
 				face,
-				beard,
+				beardSprite,
 				mouth,
 				downThere,
 				bubble,
@@ -2007,11 +2123,69 @@ const Game = function() {
 		return discussionTopic == "MEMORY";
 	}
 
+	// const MENU_SPOTS = [
+	// 	[110, 85, 'hair'],
+	// 	[110, 85, 'color'],
+	// 	[110, 95, 'face'],
+	// 	[110, 95, 'color'],
+	// 	[110, 120, 'body'],
+	// ];
+
+//		const switchers = ['hair', 'hairColor', 'head', 'face', 'skinColor', 'bodyColor'];
+
+	const CUSTOM_MENU = [
+		['CHANGE', 122, 180],
+		['NAME', 122, 200],
+		['OPTIONS', 122, 220],
+		['START', 122, 240],
+	];
+
+	const OPTIONS_MENU = [
+		['BACK', 122, 180],
+		['TEXT SPEED', 122, 200],
+	];
+
+	const TEXT_SPEED_MENU = [
+		['NORMAL', 122, 180],
+		['FAST', 122, 200]
+	];
+
+	let cursor = 0;
+	let playerName = '';
+	let entryMode = false;
+
+	let menuType = 0;
+	let MENUS = [CUSTOM_MENU, OPTIONS_MENU, TEXT_SPEED_MENU];
+
 	function getIntroSprites(now) {
 		sprites.length = 0;
-		sprites.push(getSprite('hero', 160, 150, 0, 0, hero, now, {
+		sprites.push(getSprite('hero', 150, 150, 0, 0, hero, now, {
 			size: [128, 128],
 		}));
+		sprites.push(['text', 60, 70, {text: 'TOTAL RICKALL MASSACRE', color: 'white'}]);
+		// const [ menuX, menuY ] = MENU_SPOTS[customMenu];
+		if(!entryMode) {
+			sprites.push(['pointer', 85, 155+ customMenu * 20, { animated: true, frameRate: 20 }]);
+		}
+		for(let i=0; i<MENUS[menuType].length; i++) {
+			let [ text, x, y ] = MENUS[menuType][i];
+			const color = i===customMenu ? 'yellow':'white';
+			if(menuType === 0 && i===1 && (playerName || entryMode)) {
+				let p = playerName;
+				if(entryMode) {
+					if(Math.floor(now/100) % 2 === 0) {
+						p = p.split("").concat(' ');
+						p.splice(cursor, 1, '_');
+						p = p.join('');
+					} else {
+						p = p.split("").concat(' ');
+						p = p.join('');						
+					}
+				}
+				text += ': ' + p + "";
+			}
+			sprites.push(['text', x, y, { text, color}]);
+		}
 		return sprites;
 	}
 
@@ -2082,7 +2256,7 @@ const Game = function() {
 				const topics = !killed ? HOT_TOPICS.normal : killed.parasite ? HOT_TOPICS.justKilled : HOT_TOPICS.justKilledHuman;
 				let text = memoryLanes() ? npcToTalk.memory : whoAreYou() ? npcToTalk.introduction : npcToTalk.husband ? (inFinal?
 					(FINALCHATS[finalChat][0]):"Remember our vacation?") 
-				: topics[npcToTalk.id % topics.length]; //'Greetings. What can I do for you?';
+				: (topics[npcToTalk.id % topics.length]).split("{parasite}").join("" + parasiteCount); //'Greetings. What can I do for you?';
 				lastMessage = text;
 				if (killed) {
 					text = text.split("{name}").join(killed.name).split("{occupation}").join(killed.occupation);
@@ -2321,7 +2495,7 @@ const Game = function() {
 		["--1-"],
 		["I do remember now.", true],
 		["I was supposed to leave for Europe but my flight got cancelled. So I came back home...", true],
-		["...and found you in bed with...", true],
+		["...and found you in bed with my " + getRandom(OCCUPATIONS) + '.', true],
 		["I was drunk that night! And lonely! I just made a stupid mistake and I regret."],
 		["Well I guess, you're human after all, Slurpy Gary", true],
 		["So very human....", true],
@@ -2481,6 +2655,8 @@ const Game = function() {
 		return colors;
 	}
 
+	const ABCD = " ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
 	function getFinalSprites() {
 		if(skipOnce) {
 			skipOnce = false;
@@ -2489,7 +2665,8 @@ const Game = function() {
 		return [
 			['sex', 0, 50, {animated: true}],
 			['sex-caught', 0, 50, {animated: true, after: 7000, animationStart: 7000}],
-			['text', 20, 42, { text: "Slurpy Gary! how could you?           \n\nAnd with...              HER.", color: '#cccccc', speechSpeed: 100, talkTime: 11000, zOrder: 3, outline: '#222222' }],
+			['text', 200, 82, {text: playerName && playerName.length ? playerName + "!" : '', color : "#cccccc", speechSpeed: 100, talkTime: 8000, zOrder: 3, outline: "#222222"}],
+			['text', 20, 42, { text: "Slurpy Gary! how could you?           \n\nAnd with...              YOU.", color: '#cccccc', speechSpeed: 100, talkTime: 11000, zOrder: 3, outline: '#222222' }],
 
 		];
 
@@ -2501,6 +2678,10 @@ const Game = function() {
 		[0, 0],
 		[-1, -1],
 	];
+
+
+	let customMenu = 0;
+
 
 	return {
 		settings,
@@ -2694,9 +2875,126 @@ const Game = function() {
 			["hit.wav", 0.4],
 		],
 		scenes: [
-			// {
-			// 	sprites: getIntroSprites,
-			// },
+			{
+				actions: [
+					now => {
+						if(Keyboard.action.down) {
+							if(menuType == 0) {
+								if(customMenu===MENUS[menuType].length-1) {
+									Engine.nextScene(now);
+								} else if(customMenu === 0) {
+									if(!waitUp) {
+										randomHero();
+										waitUp = true;
+									}
+								} else if(customMenu===1) {
+									if(!waitUp) {
+										entryMode = !entryMode
+										waitUp = true;
+									}
+								} else if(customMenu===2) {
+									if(!waitUp) {
+										menuType = 1;
+										customMenu = 0;
+										waitUp = true;
+									}
+								}
+							} else if(menuType == 1) {
+								if(customMenu==0) {
+									if(!waitUp) {
+										menuType = 0;
+										customMenu = 0;
+										waitUp = true;
+									}									
+								} else if(customMenu==1) {
+									if(!waitUp) {
+										menuType = 2;
+										customMenu = 0;
+										waitUp = true;
+									}
+								}
+							} else if(menuType == 2) {
+								if(customMenu==0) {
+									if(!waitUp) {
+										menuType = 0;
+										customMenu = 0;
+										SPEECH_SPEED = DEFAULT_SPEECH_SPEED;
+										waitUp = true;
+									}									
+								} else if(customMenu==1) {
+									if(!waitUp) {
+										menuType = 0;
+										customMenu = 0;
+										SPEECH_SPEED = DEFAULT_SPEECH_SPEED / 10;
+										waitUp = true;
+									}
+								}								
+							}
+
+						} else if(Keyboard.move.dx < 0) {
+							if(!waitUp) {
+//								changeHero(switchers[customMenu], -1);
+								if(entryMode) {
+									waitUp = true;
+									cursor = Math.max(0, cursor - 1);
+//									console.log(playerName);
+								}
+							}
+						} else if(Keyboard.move.dx > 0) {
+							if(!waitUp) {
+//								changeHero(switchers[customMenu], 1);							
+								if(entryMode) {
+									waitUp = true;
+									cursor = Math.min(cursor + 1, playerName.length, 12);
+								}
+							}
+						} else if(Keyboard.move.dy < 0) {
+							if(!waitUp) {
+								if(entryMode) {
+									let p = playerName;
+									p += ' ';
+									let letter = playerName.charAt(cursor);
+									let index = ABCD.indexOf(letter);
+									index = (index + 1 + ABCD.length) % ABCD.length;
+									letter = ABCD[index];
+									p = p.split("");
+									p.splice(cursor, 1, letter);
+									p = p.join("");
+									playerName = p.trim();
+								} else {
+									customMenu = Math.max(0, customMenu-1);
+								}
+								waitUp = true;
+							}
+						} else if(Keyboard.move.dy > 0) {
+							if(!waitUp) {
+								if(entryMode) {
+									let p = playerName;
+									p += ' ';
+									let letter = playerName.charAt(cursor);
+									let index = ABCD.indexOf(letter);
+									index = (index - 1 + ABCD.length) % ABCD.length;
+									letter = ABCD[index];
+									p = p.split("");
+									p.splice(cursor, 1, letter);
+									p = p.join("");
+									playerName = p.trim();
+								} else {
+									customMenu = Math.min(MENUS[menuType].length-1, customMenu+1);
+								}
+								waitUp = true;
+							}
+						} else {
+							waitUp = false;
+						}
+					},
+					['setMusic', ['music']],
+				],
+				init: [
+					[ '=>', 'music', 'vick_n_vorty' ],
+				],
+				sprites: getIntroSprites,
+			},
 			{
 				fadeStart: ['exitTime'],
 				objects: {

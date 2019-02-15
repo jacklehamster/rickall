@@ -13,6 +13,7 @@ const Keyboard = function() {
   const KEY_SPACE = 32;
   const KEY_ESCAPE = 27;
   const keyboard = [];
+  let keysMove = true;
   let move = {
   	dx: 0,
   	dy: 0,
@@ -21,9 +22,13 @@ const Keyboard = function() {
   const action = { pressedOnce: false, down: false };
   function onKey(e) {
     switch(e.keyCode) {
-      case KEY_LEFT: case KEY_RIGHT: case KEY_UP: case KEY_DOWN:
       case KEY_W: case KEY_S: case KEY_A: case KEY_D:
-      case KEY_Q: case KEY_E:
+        keyboard[e.keyCode] = e.type === "keyup" ? 0 : 1;
+        if(keysMove) {
+          updateMove();
+        }
+        e.preventDefault();
+      case KEY_LEFT: case KEY_RIGHT: case KEY_UP: case KEY_DOWN:
         keyboard[e.keyCode] = e.type === "keyup" ? 0 : 1;
         updateMove();
         e.preventDefault();
@@ -68,6 +73,7 @@ const Keyboard = function() {
   document.addEventListener("keydown", onKey);
   document.addEventListener("keyup", onKey);
   return {
+    keysMove,
   	keyboard,
   	move,
     action,
