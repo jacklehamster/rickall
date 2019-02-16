@@ -12,6 +12,7 @@ const Keyboard = function() {
   const KEY_ENTER = 13;
   const KEY_SPACE = 32;
   const KEY_ESCAPE = 27;
+  const KEY_P = 80;
   const keyboard = [];
   let keysMove = true;
   let move = {
@@ -38,6 +39,7 @@ const Keyboard = function() {
         action.down = e.type === 'keyup' ? 0 : 1;
         e.preventDefault();
         break;
+      case KEY_P:
       case KEY_ESCAPE:
         action.cancel = e.type === 'keyup' ? 0 : 1;
         e.preventDefault();

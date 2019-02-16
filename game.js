@@ -142,6 +142,8 @@ const Game = function() {
 	];
 
 
+	const NUMBERS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+
 	const HOT_TOPICS = {
 		"normal": [
 			"At least, we both know we're not parasites.",
@@ -435,6 +437,10 @@ const Game = function() {
 		// bodyColor: 'nude',
 		// gender: 'penis',
 	 };
+	 window.hero = hero;
+	 // 		const xx = Math.round(x / 32);
+		// const yy = Math.round(y / 32);
+
 
 	const FACE_COLORS = [
 		{ name: 'default', 0xFFFFFF: 0xFFFFFF },
@@ -466,7 +472,7 @@ const Game = function() {
 		{ name: 'brown', 0xff7c00: 0x292910 },
 		{ name: 'brown', 0xff7c00: 0x292910 },
 		{ name: 'pink', 0xff7c00: 0xff5ccf },
-		{ name: 'rick', 0xB4DFF5: 0xB4DFF5 },
+		{ name: 'rick', 0xff7c00: 0xB4DFF5 },
 	];
 	const NUDE = BODY_COLORS.filter(a => a.name==='nude')[0];
 
@@ -1518,6 +1524,11 @@ const Game = function() {
 								}
 							}
 						}
+					} else {
+						if(Math.round(hero.x/32) >= 14 && Math.round(hero.x/32) <= 15 && Math.round(hero.y/32)===3
+							&& hero.face.dy < 0 && hero.face.dx===0) {
+							tv = tv%4 + 1;
+						}
 					}
 				}
 				alreadyPressed = true;
@@ -2161,10 +2172,19 @@ const Game = function() {
 
 	function getIntroSprites(now) {
 		sprites.length = 0;
+
 		sprites.push(getSprite('hero', 150, 150, 0, 0, hero, now, {
 			size: [128, 128],
 		}));
 		sprites.push(['text', 60, 70, {text: 'TOTAL RICKALL MASSACRE', color: 'white'}]);
+
+
+		const { count, total } = Engine.loadInfo;
+		if(count < total * .9) {
+			sprites.push(['text', 122, 180, {text:Math.ceil(count/total * 10*100)/10 + "%", color:'white' }]);
+			return sprites;
+		}
+
 		// const [ menuX, menuY ] = MENU_SPOTS[customMenu];
 		if(!entryMode) {
 			sprites.push(['pointer', 85, 155+ customMenu * 20, { animated: true, frameRate: 20 }]);
@@ -2190,6 +2210,7 @@ const Game = function() {
 		}
 		return sprites;
 	}
+	let tv = 1;
 
 	let lost = DEBUG.lost;
 	const sprites = [];
@@ -2258,7 +2279,8 @@ const Game = function() {
 				const topics = !killed ? HOT_TOPICS.normal : killed.parasite ? HOT_TOPICS.justKilled : HOT_TOPICS.justKilledHuman;
 				let text = memoryLanes() ? npcToTalk.memory : whoAreYou() ? npcToTalk.introduction : npcToTalk.husband ? (inFinal?
 					(FINALCHATS[finalChat][0]):"Remember our vacation?") 
-				: (topics[npcToTalk.id % topics.length]).split("{parasite}").join("" + parasiteCount); //'Greetings. What can I do for you?';
+				: (topics[npcToTalk.id % topics.length]).split("{parasite}").join("" + 
+					(NUMBERS[parasiteCount]||parasiteCount)); //'Greetings. What can I do for you?';
 				lastMessage = text;
 				if (killed) {
 					text = text.split("{name}").join(killed.name).split("{occupation}").join(killed.occupation);
@@ -2297,6 +2319,12 @@ const Game = function() {
 				}
 			}
 		}
+		/////////////////
+		/////////////////
+		if(!inHallway) {
+			sprites.push(['tv-game-jam-'+tv, scroll.x + 434, scroll.y + 10, {size:[60,30], animated: true, frameRate: 60}]);
+		}
+
 		if (hero.gun && (!inFinal && !inHallway || finalChat == FINALCHATS.length)) {
 			const LETTER_BOX_SIZE = Math.min(30, (now - hero.gun) / 8);
 			if(finalEnding!=='SHOOT') {
@@ -2304,7 +2332,7 @@ const Game = function() {
 				sprites.push(['rect',0, settings.size[1] - LETTER_BOX_SIZE, { width: settings.size[0], height: LETTER_BOX_SIZE, zOrder: 2 }]);
 				sprites.push(['gun', settings.size[0] - 50, settings.size[1] - 30, { zOrder: 3}]);
 //				if (ppCount === 0) {
-					sprites.push(['text', 10, 18, { text: "ESC: PUT AWAY THE GUN", zOrder: 3, color: '#FFFFFF'}]);
+					sprites.push(['text', 10, 18, { text: "ESC / P: PUT AWAY THE GUN", zOrder: 3, color: '#FFFFFF'}]);
 //				}
 				sprites.push(['text', 10, 30, { text: "SPACE: SHOOT", zOrder: 3, color: '#FFFFFF'}]);
 			}
@@ -2870,9 +2898,29 @@ const Game = function() {
 				offset: {x:-20, y:-40},
 			}],
 			['heart.png', 32, 32],
+			// ['tv-game-jam.png', 420, 333, {
+			// 	static: .2,
+			// 	count: 10,
+			// }],
+			['tv-game-jam-1.png', 420, 333, {
+				static: .2,
+				count: 10,
+			}],
+			['tv-game-jam-2.png', 420, 333, {
+				static: .2,
+				count: 10,
+			}],
+			['tv-game-jam-3.png', 420, 333, {
+				static: .2,
+				count: 10,
+			}],
+			['tv-game-jam-4.png', 420, 333, {
+				static: .2,
+				count: 10,
+			}],
 
 
-			["spring_sprinkle.mp3", 1, loop, true],
+			["spring_sprinkle.mp3", 1, loop],
 			["vick_n_vorty.mp3", 1, loop],
 			["evil_vortman.mp3", 1, loop],
 			["parasite_die.wav", 1],

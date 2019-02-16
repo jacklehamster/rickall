@@ -49,7 +49,7 @@ const Engine = function(document, Game) {
 
 	function loadImage(src, width, height, option) {
 		const img = new Image();
-		const { pingpong, offset, animOffset } = option;
+		const { pingpong, offset, animOffset, static } = option;
 		const offsetX = offset ? offset.x || 0 : 0;
 		const offsetY = offset ? offset.y || 0 : 0;
 		let { count } = option;
@@ -84,6 +84,10 @@ const Engine = function(document, Game) {
 				ctx.drawImage(
 					img, x * width, y * height, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight,
 				);
+				if(static) {
+					applyEffect(static, ctx);
+				}
+
 				const flipCanvas = document.createElement('canvas');
 				flipCanvas.width = cropWidth;
 				flipCanvas.height = cropHeight;
@@ -125,6 +129,7 @@ const Engine = function(document, Game) {
 				}
 			}
 			addStock(tag, mainSprite);
+			loadInfo.count++;
 		});
 		img.src = src;
 	}
@@ -170,6 +175,7 @@ const Engine = function(document, Game) {
 			if(autoStart && Keyboard.action.pressedOnce) {
 				audio.play();
 			}
+			loadInfo.count++;
 		});
 		audio.src = src;
 	}
@@ -431,35 +437,43 @@ const Engine = function(document, Game) {
 		}
 	}
 
+	let loadInfo = {
+		count: 0,
+		total: 0,
+	};
 	function loadAssets(assets) {
 		assets.filter(asset => asset[0].split(".").pop()==='png')
 			.forEach(asset => {
+				loadInfo.total++;
 				const [ src, width, height, option ] = asset;
 				loadImage(src, width || 0, height || 0, option || {});
 			});
 		assets.filter(asset => asset[0].split(".").pop()==='mp3')
 			.forEach(asset => {
+				loadInfo.total++;
 				const [ src, vol, loop, autoStart ] = asset;
 				loadSound(src, vol, loop, autoStart);
 			});
 		assets.filter(asset => asset[0].split(".").pop()==='ogg')
 			.forEach(asset => {
+				loadInfo.total++;
 				const [ src, vol, loop, autoStart ] = asset;
 				loadSound(src, vol, loop, autoStart);
 			});
 		assets.filter(asset => asset[0].split(".").pop()==='wav')
 			.forEach(asset => {
+				loadInfo.total++;
 				const [ src, vol, loop, autoStart ] = asset;
 				loadSound(src, vol, loop, autoStart);
 			});
 	}
 
 	function resizeCanvas(canvas) {
-		// pixelSize = Math.min(
-		// 	Math.max(1, 2 * Math.floor(window.innerWidth / canvas.width)),
-		// 	Math.max(1, 2 * Math.floor(window.innerHeight / canvas.height)),
-		// ) / 2;
-		pixelSize = 2;
+		pixelSize = Math.min(
+			Math.max(1, 2 * Math.floor(window.innerWidth / canvas.width)),
+			Math.max(1, 2 * Math.floor(window.innerHeight / canvas.height)),
+		) / 2;
+		// pixelSize = 2;
 		canvas.style.width = `${canvas.width * pixelSize}px`;
 		canvas.style.height = `${canvas.height * pixelSize}px`;
 		return canvas;
@@ -520,7 +534,7 @@ const Engine = function(document, Game) {
 		// 	console.log(now, scene);
 		// }
 		if(fadeTime) {
-			applyEffect((now - fadeTime) / 1000, now);
+			applyEffect((now - fadeTime) / 1000, ctx);
 		}
 		requestAnimationFrame(refresh);
 	}
@@ -535,7 +549,7 @@ const Engine = function(document, Game) {
 		// ctx.putImageData(imgData, 0, 0);
 
 
-	function applyEffect(fade, now) {
+	function applyEffect(fade, ctx) {
 		const { width, height } = ctx.canvas;
 		const imgData = ctx.getImageData(0, 0, width, height);
 		const data = imgData.data;
@@ -829,5 +843,6 @@ const Engine = function(document, Game) {
 		playSound,
 		previousScene,
 		getScene,
+		loadInfo,
 	};
 }(document, Game);
