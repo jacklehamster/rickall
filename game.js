@@ -12,7 +12,7 @@ const Game = function() {
 	const GAME_SIZE = [ 320, 256 ];
 	const WORLD_SIZE = [600, 600];//[1000, 1000];
 	const STRING_LIMIT = 29;
-	const LONG_STRING_LIMIT = 45;
+	const LONG_STRING_LIMIT = 42;
 	const NPC_COUNT = 16;//100;
 	const DEFAULT_SPEECH_SPEED = 30;
 	let SPEECH_SPEED = localStorage.getItem('textSpeed')==='fast' ? DEFAULT_SPEECH_SPEED /10 : DEFAULT_SPEECH_SPEED;
@@ -121,7 +121,7 @@ const Game = function() {
 		"You remember going to the movie theater with {name} to watch Star Wars. You both snuggled during a scene with Chewbacca.",
         "Oh, there was that one time when {name} was getting married. We sang karoake and danced all night long!",
         "Of course your {name}'s 21st birthday party was crazy! Everyone did Jello shots and danced to Soulja Boy!",
-        "That remind me of when {name} and us went to see Toy Story on Ice! Buzz Lightyear looked really nice on skates!",
+        "That remind me of when {name} and I went to see Toy Story on Ice! Buzz Lightyear looked really nice on skates!",
         "One time we went to Coachella with {name}! Ghandi played guitar with Bob Marley and they invited {name} to do a drum solo!",
         "One summer we all went to Hawaii. We drank Piña Coladas and {name} won a surfing contest!",
         "Last time we went to the Summer Olympics was intense! {name} got invited to swim in the 100 meter relay and won Gold!",
@@ -130,19 +130,19 @@ const Game = function() {
 	];
 
 	const BAD_MEMORIES = [
-		"You remember that time you all went to Magic Mountain on that giant rollercoaster. {name} vomitted his lunch all over your pants, all the way down.",
+		"You remember that time you all went to Magic Mountain on that giant rollercoaster. {name} vomitted {their} lunch all over your pants, all the way down.",
 		"You remember that wonderful day on an excursion on top of the replica of Titanic boat. {name} thought it'd be funny to push you overboard. You spent the rest of the day at the hospital.",
 		"You remember that romantic night on top of Lover's Hill, sitting in a car with {name} and watching the sunset. {name} farted, but we didn't open the window because it was too cold.",
-		"You remember when you got kidnapped by gangsters and {name} went to your rescue. You found out those were all actors and this was all a ruse for {name} to pretend he was heroic!",
+		"You remember when you got kidnapped by gangsters and {name} went to your rescue. You found out those were all actors and this was all a ruse for {name} to pretend to be heroic!",
 		"You remember the romantic dinner with {name} at a very fancy Korean restaurant. You spend the majority of it by yourself, waiting for {name} to come out of the restroom.",
 		"You remember when you went home to visit your parents and introduced {name} to them. {name} got the toilet stuck with a big giant turd and your mom had to spend the night unplugging it.",
 		"You remember going to the movie theater with {name} to watch Star Wars. {name} kept yelling at the screen and cursing George Lucas during every scene with Jar Jar Binks.",
         "Oh, there was that one time when {name} was getting married. The bride's mother died from eating undercooked shellfish!",
         "Of course your {name}'s 21st birthday party was crazy! {name} tried to butt-chug a beer and we had to call an ambulance...",
-        "That remind me of when {name} and us went to see Toy Story on Ice! Woody got high on bath salts and ate Mr. Potato Head, we didn't get a refund...",
+        "That remind me of when {name} and I went to see Toy Story on Ice! {name} got high on bath salts and ate Mr. Potato Head, we didn't get a refund...",
         "One time we went to Coachella with {name}! Limp Bizkit played 5 sets and we all caught Typhoid fever!",
-        "One summer we all went to Hawaii. {name} broke their leg and we had to sell their plasma for plane tickets home...",
-        "Last time we went to the Summer Olympics was intense! {name} sneezed on Michael Phelps and he got a lung infection and drowned!",
+        "One summer we all went to Hawaii. {name} broke {their} leg and we had to sell {their} plasma for plane tickets home...",
+        "Last time we went to the Summer Olympics was intense! {name} sneezed on Michael Phelps who got a lung infection and drowned!",
         "Remember when we went to Las Vegas to play Eye-Spy? {name} offended the mob bosses and we all got our legs broken...",
         "It reminds me of that roadtrip we took to The Mall of America. {name} got caught in the escalator... they still have to poop in a bag...",
 	];
@@ -180,6 +180,7 @@ const Game = function() {
             "Of course that was a parasite. Only a parasite would think otherwise.",
             "I remembered {name} so fondly.",
             "Good riddance! {name} was always so nice it was getting annoying. Or was it just a fake memory?",
+            "One parasite down, {parasite} to go!"
 		].map(wrapText),
 		"justKilledHuman": [
 			"Hey careful where you point that gun.",
@@ -499,10 +500,10 @@ window.characters = characters;
 		return wrapText("You remember the day you said 'I do.' to Slurpy Gary, your lovely husband. Gary forgot that day so he showed up at the ceremony in pyjamas, a cherished moment you will always remember.");
 	}
 
-	function randomMemory(index, good, name) {
+	function randomMemory(index, good, name, gender) {
 		const list = good ? GOOD_MEMORIES : BAD_MEMORIES;
 		const text = list[index % list.length];
-		return text.split("{name}").join(name);
+		return text.split("{name}").join(name).split("{their}").join(gender==='penis'?'his':'her').split("{they}").join(gender==='penis'?'he':'she');
 	}
 
 	function randomHero(index) {
@@ -683,7 +684,7 @@ window.characters = characters;
 				type: husband ? 'gary' : getRandom(['npc', 'pixie', 'mad', 'smart', 'femme', 'morty']),
 				gender,
 				introduction: husband ? husbandIntro(gender) : wrapText(randomIntroduction(index + randomMess, name, occupation)),
-				memory: wrapTextWithLimit(husband ? husbandMemory(gender) : randomMemory(index + randomMess, parasite, name), LONG_STRING_LIMIT),
+				memory: wrapTextWithLimit(husband ? husbandMemory(gender) : randomMemory(index + randomMess, parasite, name, gender), LONG_STRING_LIMIT),
 				blocked: 0,
 				husband,
 				parasite,
@@ -934,6 +935,10 @@ window.characters = characters;
 	}
 
 	function secondScene(now) {
+		Engine.dispatchTrigger({trigger:'best-times', score:"Fastest plays", value:now});
+		Engine.dispatchTrigger({trigger:'most-lLives', score:"Most lives remaining", value:heartCount});
+
+
 		skipOnce = true;
 		Engine.nextScene(now);
 		hero.x = WORLD_SIZE[0]/2+16;
@@ -945,6 +950,7 @@ window.characters = characters;
 		exitedTheBuilding = 0;
 		exited = false;
 		lastShot.time = 0;
+		hero.lastHit = 0;
 
 		const COLS = 7, ROWS = DEBUG.shortExit ? 5 :20;
 		for(let r=0; r < ROWS; r++) {
@@ -1351,7 +1357,7 @@ window.characters = characters;
 	let garyMemory = 0;
 	let garyGun = 0;
 	let garyScared = 0;
-	let garyHidden = false;
+	let garyHidden = 0;
 
 	let restarting = false;
 	function performActions(now) {
@@ -1850,8 +1856,8 @@ window.characters = characters;
 						Engine.playSound('parasite_die');
 						parasiteCount--;
 						// console.log(totalParasiteCount - parasiteCount);
-						let dx = Math.random()-.5, dy = Math.random()-.5;
 						for(let i=0; i < totalParasiteCount - parasiteCount; i++) {
+							let dx = Math.random()-.5, dy = Math.random()-.5;
 							ppCount++;
 							parasites.push(
 								{ born: now, x: npc.x, y: npc.y, move: {dx, dy} },
@@ -1956,7 +1962,7 @@ window.characters = characters;
 				let dist = Math.sqrt(dx * dx + dy * dy);
 				if(goThroughWall) {
 					if(dist < 10) {
-						garyHidden = true;
+						garyHidden = now;
 						npc.hidden = true;
 					}
 				}
@@ -2351,7 +2357,7 @@ window.characters = characters;
 			const y = Engine.evaluate(tile.y);
 			if (onScreen(tile) || inFinal) {
 				if(tile.door === 'opened') {
-					if(canExit()) {
+					if(canExit() || garyHidden && now - garyHidden < 200) {
 						sprites.push([tile.type, scroll.x + x, scroll.y + y, {animated: false, frame: tile.frame, alpha: tile.alpha}]);
 					}
 				} else if(tile.door === 'closed') {

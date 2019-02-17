@@ -13,9 +13,14 @@ function onLoggedIn() {
 	// 	})
 	// });
 	Engine.onTrigger(action => {
-		unlockMedal(ngio, action.medal, medal => console.log(medal.name, 'unlocked'));
+        if(action.medal) {
+            unlockMedal(ngio, action.medal, medal => console.log(medal.name, 'unlocked'));
+        } else if(action.score && action.value) {
+            postScore(ngio, action.score, action.value, result => console.log(result));
+        }
 	});
 	fetchMedals(ngio, () => {});
+    fetchScoreBoards(ngio, () => {});
 }
 
 function onLoginFailed() {
@@ -103,15 +108,51 @@ function fetchMedals(ngio, callback) {
 			}
 		});
 	}
-} 
+}
+
+let scoreboards = null;
+let boardCallbacks = null;
+function fetchScoreBoards(ngio, callback) {
+    if(scoreboards) {
+        callback(scoreboards);
+    } else if(boardCallbacks) {
+        boardCallbacks.push(callback);
+    } else {
+        boardCallbacks = [callback];
+        ngio.callComponent('ScoreBoard.getBoards', {}, result => {
+            if(result.success) {
+                scoreboards = result.scoreboards;
+                scoreboards.forEach(board => console.log(board.name, board.id));
+                boardCallbacks.forEach(callback => {
+                    callback(scoreboards);
+                });
+                boardCallbacks = null;
+            }
+        });        
+    }
+}
+
+function postScore(ngio, name, value, callback) {
+    if (!ngio.user) return;
+    fetchScoreBoards(ngio, scoreboards => {
+        const scoreboard = scoreboards.filter(board => board.name === name)[0];
+        if(scoreboard) {
+            ngio.callComponent('ScoreBoard.postScore', {id:scoreboard.id, value}, result => {
+                if(callback) {
+                    callback(result.score);
+                }
+            });
+        }
+    });
+}
 
 function unlockMedal(ngio, medal_name, callback) {
-    console.log('unlocking ', medal_name);
+    // console.log('unlocking ', medal_name);
     /* If there is no user attached to our ngio object, it means the user isn't logged in and we can't unlock anything */
     if (!ngio.user) return;
 //    return;
     fetchMedals(ngio, medals => {
-    	medal = medals.filter(medal => medal.name === medal_name)[0];
+    	const medal = medals.filter(medal => medal.name === medal_name)[0];
     	if(medal) {
     		if(!medal.unlocked) {
 	    		ngio.callComponent('Medal.unlock', {id:medal.id}, result => {
