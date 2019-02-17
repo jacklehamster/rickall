@@ -737,14 +737,16 @@ const Engine = function(document, Game) {
 			const lines = text.split('\n');
 			const fontSize = option.fontSize || 14;
 			ctx.font = fontSize + "px Arial";
-			const LINE_HEIGHT = 12;
+			const LINE_HEIGHT = option.lineHeight || 12;
+			const centerLine = option.noCenter ? 0 : 1;
+			const baseLine = - (centerLine * lines.length/2) * LINE_HEIGHT + y;
 			if(outline) {
 			    ctx.fillStyle = evaluate(outline, sprite) || 'black';
 				for(let l=0; l<lines.length; l++) {
-					ctx.fillText(lines[l], +0 + x, -1 + l*LINE_HEIGHT - (lines.length/2) * LINE_HEIGHT + y);
-					ctx.fillText(lines[l], +0 + x, +1 + l*LINE_HEIGHT - (lines.length/2) * LINE_HEIGHT + y);
-					ctx.fillText(lines[l], -1 + x, +0 + l*LINE_HEIGHT - (lines.length/2) * LINE_HEIGHT + y);
-					ctx.fillText(lines[l], +1 + x, +0 + l*LINE_HEIGHT - (lines.length/2) * LINE_HEIGHT + y);
+					ctx.fillText(lines[l], +0 + x, -1 + l*LINE_HEIGHT + baseLine);
+					ctx.fillText(lines[l], +0 + x, +1 + l*LINE_HEIGHT + baseLine);
+					ctx.fillText(lines[l], -1 + x, +0 + l*LINE_HEIGHT + baseLine);
+					ctx.fillText(lines[l], +1 + x, +0 + l*LINE_HEIGHT + baseLine);
 
 					// ctx.fillText(lines[l], -1 + x, -1 + l*10 - (lines.length/2) * 10 + y);
 					// ctx.fillText(lines[l], -1 + x, +1 + l*10 - (lines.length/2) * 10 + y);
@@ -760,7 +762,7 @@ const Engine = function(document, Game) {
 
 			ctx.fillStyle = evaluate(color, sprite) || 'black';
 			for(let l=0; l<lines.length; l++) {
-				ctx.fillText(lines[l], x, l*LINE_HEIGHT - (lines.length/2) * LINE_HEIGHT + y);
+				ctx.fillText(lines[l], x, l*LINE_HEIGHT + baseLine);
 			}			
 
 			if(option.alpha) {

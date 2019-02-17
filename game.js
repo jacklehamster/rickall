@@ -95,15 +95,20 @@ const Game = function() {
 		return string.charAt(0).toUpperCase() + string.substr(1).toLowerCase();
 	}
 
+	function seededRandom(n) {
+		return Math.floor(Math.sin(n * 313) * 10000);
+	}
+
+	let seed = Math.floor(Math.random()*1000000);
 	function randomIntroduction(id, name, occupation) {
-		return INTRO[(id + 999) % INTRO.length] + " "
+		return INTRO[(id + seededRandom(999) ^ seed) % INTRO.length] + " "
 			+ name
 			+ " your "
 			+ occupation
-			+ ". We had " + HOBBY[(id +3333)%HOBBY.length] + " last "
-			+ TIME[(id + 13131) % TIME.length] + " "
-			+ LOCATIONS[(id + 37)%LOCATIONS.length] + ". "
-			+ RANDOM_COMMENT[(id + 9999) % RANDOM_COMMENT.length];
+			+ ". We had " + HOBBY[(id +seededRandom(3333) ^ seed)%HOBBY.length] + " last "
+			+ TIME[(id + seededRandom(13131) ^ seed) % TIME.length] + " "
+			+ LOCATIONS[(id + seededRandom(37) ^seed)%LOCATIONS.length] + ". "
+			+ RANDOM_COMMENT[(id + seededRandom(9999) ^ seed) % RANDOM_COMMENT.length];
 	}
 
 	const GOOD_MEMORIES = [
@@ -198,6 +203,8 @@ const Game = function() {
 
 	const songs = {};
 
+	let randomo = Math.floor(Math.random()*100000000);
+	let randomi = 0;
 
 	const SPEED = .5;
 	const characters = {
@@ -314,13 +321,6 @@ window.characters = characters;
 	const GENDERS = ['penis', 'vagina'];
 	const switchers = ['hair', 'hairColor', 'head', 'face', 'skinColor', 'bodyColor', 'beard', 'gender'];
 
-	function randomHero() {
-		index = Math.floor(Math.random()*1000000000);
-		for(let i=0; i<switchers.length; i++) {
-			changeHero(switchers[i], index + (i * 13373));
-		}
-	}
-
 	function changeHero(element, index) {
 		switch(element) {
 			case 'face':
@@ -426,7 +426,7 @@ window.characters = characters;
 		return wrapTextWithLimit(text, STRING_LIMIT);
 	}
 
-	const HEADS = ['cone-head', 'npc-head', 'round-head'];
+	const HEADS = ['npc-head', 'cone-head', 'round-head'];
 	const HAIRS = ['bald', 'bald', 'bald', 'bald', 'bald', 'orange-hair', 'pony-tail', 'bowl-hair', 'spike-hair', 'rick-hair'];
 	const BEARDS = [null, null, null, null, null, null, null, 'beard'];
 
@@ -504,6 +504,24 @@ window.characters = characters;
 		const text = list[index % list.length];
 		return text.split("{name}").join(name);
 	}
+
+	function randomHero(index) {
+		if(index < 0) {
+			index = Math.abs(index) + 1313311;
+		}
+		for(let i=0; i<switchers.length; i++) {
+			changeHero(switchers[i], !index ? 0 : index + (i * 1373));
+		}
+		localStorage.setItem('hero', index);
+	}
+	let initialHero = parseInt(localStorage.getItem('hero') || 0);
+	if(initialHero) {
+		randomi = 1;
+		randomHero(initialHero);
+	} else {
+		initialHero = Math.floor(Math.random()*1000);
+	}
+
 
 	let parasiteCount = 0;
 	let ppCount = 0;
@@ -2164,59 +2182,112 @@ window.characters = characters;
 
 //		const switchers = ['hair', 'hairColor', 'head', 'face', 'skinColor', 'bodyColor'];
 
+	const SPACING = 18;
+	const MENUYSTART = 190;
 	const CUSTOM_MENU = [
-		['CHANGE', 122, 180],
-		['NAME', 122, 200],
-		['OPTIONS', 122, 220],
-		['START', 122, 240],
+		['NAME', 122, MENUYSTART],
+		['CHANGE PLAYER', 122, MENUYSTART + SPACING*1],
+		['OPTIONS', 122, MENUYSTART + SPACING*2],
+		['START', 122, MENUYSTART + SPACING*3],
 	];
 
 	const OPTIONS_MENU = [
-		['BACK', 122, 180],
-		['TEXT SPEED', 122, 200],
-		['NUDITY', 122, 220],
+		['BACK', 122, MENUYSTART],
+		['TEXT SPEED', 122, MENUYSTART + SPACING*1],
+		['NUDITY', 122, MENUYSTART + SPACING*2],
+		['HOW TO PLAY', 122, MENUYSTART + SPACING*3],
 	];
 
 	const TEXT_SPEED_MENU = [
-		['NORMAL', 122, 180],
-		['FAST', 122, 200]
+		['NORMAL', 122, MENUYSTART],
+		['FAST', 122, MENUYSTART + SPACING*1]
 	];
 
 	const NUDITY_MENU = [
-		['NO NUDITY', 122, 180],
-		['ALLOW NUDITY', 122, 200],
+		['NO NUDITY', 122, MENUYSTART],
+		['ALLOW NUDITY', 122, MENUYSTART + SPACING*1],
+	];
+
+	const HOW_TO_PLAY_MENU = [
+		['MORE', 122, MENUYSTART],
+	];
+
+	const MORE_HOW_TO_PLAY_MENU = [
+		['BACK', 122, MENUYSTART],
 	];
 
 	let cursor = 0;
-	let playerName = '';
+	let playerName = localStorage.getItem('playerName') || '';
 	let entryMode = false;
+	let menuTime = 0;
 
 	let menuType = 0;
-	let MENUS = [CUSTOM_MENU, OPTIONS_MENU, TEXT_SPEED_MENU, NUDITY_MENU];
+	let MENUS = [CUSTOM_MENU, OPTIONS_MENU, TEXT_SPEED_MENU, NUDITY_MENU, HOW_TO_PLAY_MENU, MORE_HOW_TO_PLAY_MENU];
 
 	function getIntroSprites(now) {
 		sprites.length = 0;
+//		sprites.push(['text', 60, 70, {text: 'TOTAL RICKALL MASSACRE', color: 'white'}]);
 
-		sprites.push(getSprite('hero', 150, 150, 0, 0, hero, now, {
+		if(menuType===4) {
+			sprites.push(['text', 20, 22, { text: 
+				wrapTextWithLimit("This game is based on Rick and Morty's episode 4 of season 2. It may " +
+					"contain spoilers. " +
+					"Parasites have infiltrated your home, and mixed themselves among " +
+					"your family and friends. They also implanted memories and themselves " +
+					"in everyone's brain. As a result, you can't tell who you used to know " +
+					"and who is just a pigment of fake memories. To uncover their real identity, " +
+					"you must discuss with each person and find out if they are parasite. There " +
+					"must be a way to tell them apart. (Of course, if you've watched the Rick and Morty "+
+					"episode this is based on, you already know the answer)."
+				, 42), 
+				color: '#ddddee', 
+				speechSpeed: 1, 
+				talkTime: menuTime,
+				zOrder: 3, outline: '#221111',
+				noCenter: true,
+				lineHeight: 14,
+			}]);
+			return sprites;
+		} else if(menuType===5) {
+			sprites.push(['text', 20, 72, { text: 
+				"ARROW KEYS or WASD to move\n\n" +
+				"SPACE BAR or ENTER to talk or shoot.\n\n" +
+				"ESC or P to put away the gun.", 
+				color: '#ddddee', 
+				speechSpeed: 1, 
+				talkTime: menuTime,
+				zOrder: 3, outline: '#221111',
+				noCenter: true,
+				lineHeight: 14,
+			}]);
+			return sprites;
+		}
+
+		sprites.push(['total-rickall-massacre', 0, 0, {}]);
+		sprites.push(['rect', 0, 90, {width: 320, height: 64, color: '#1b1277'}])
+		const INITIAL_SHIFT = -10;
+
+		sprites.push(getSprite('hero', 170 + INITIAL_SHIFT, 150, 0, 0, hero, now, {
 			size: [128, 128],
 		}));
-		sprites.push(['text', 60, 70, {text: 'TOTAL RICKALL MASSACRE', color: 'white'}]);
 
 
 		const { count, total } = Engine.loadInfo;
 		if(count < total * .9) {
-			sprites.push(['text', 122, 180, {text:Math.ceil(count/total * 10*100)/10 + "%", color:'white' }]);
+			sprites.push(['text', 134 + INITIAL_SHIFT, MENUYSTART, {text:Math.ceil(count/total * 10*100)/10 + "%", color:'white', fontSize: 20 }]);
 			return sprites;
 		}
 
+
+
 		// const [ menuX, menuY ] = MENU_SPOTS[customMenu];
 		if(!entryMode) {
-			sprites.push(['pointer', 85, 155+ customMenu * 20, { animated: true, frameRate: 20 }]);
+			sprites.push(['pointer', 87 + INITIAL_SHIFT,MENUYSTART - 180 +155+ customMenu * SPACING, { animated: true, frameRate: 20 }]);
 		}
 		for(let i=0; i<MENUS[menuType].length; i++) {
 			let [ text, x, y ] = MENUS[menuType][i];
 			const color = i===customMenu ? 'yellow':'white';
-			if(menuType === 0 && i===1 && (playerName || entryMode)) {
+			if(menuType === 0 && i===0 && (playerName || entryMode)) {
 				let p = playerName;
 				if(entryMode) {
 					if(Math.floor(now/100) % 2 === 0) {
@@ -2230,7 +2301,7 @@ window.characters = characters;
 				}
 				text += ': ' + p + "";
 			}
-			sprites.push(['text', x, y, { text, color}]);
+			sprites.push(['text', x+ INITIAL_SHIFT, y, { text, color}]);
 		}
 		return sprites;
 	}
@@ -2347,7 +2418,7 @@ window.characters = characters;
 		/////////////////
 		/////////////////
 		if(!inHallway) {
-			sprites.push(['tv-game-jam-'+tv, scroll.x + 434, scroll.y + 10, {size:[60,30], animated: true, frameRate: 60}]);
+			sprites.push(['tv-game-jam-'+tv, scroll.x + 434, scroll.y + 10, { animated: true, frameRate: 60}]);
 			// sprites.push(['gun', scroll.x + 980, scroll.y + 20, {}]);
 		}
 
@@ -2765,6 +2836,7 @@ window.characters = characters;
 	let customMenu = 0;
 
 
+
 	return {
 		settings,
 		assets: [
@@ -2954,22 +3026,23 @@ window.characters = characters;
 			// 	static: .2,
 			// 	count: 10,
 			// }],
-			['tv-game-jam-1.png', 420, 333, {
+			['tv-game-jam-1.png', 60, 30, {
 				static: .2,
 				count: 10,
 			}],
-			['tv-game-jam-2.png', 420, 333, {
+			['tv-game-jam-2.png', 60, 30, {
 				static: .2,
 				count: 10,
 			}],
-			['tv-game-jam-3.png', 420, 333, {
+			['tv-game-jam-3.png', 60, 30, {
 				static: .2,
 				count: 10,
 			}],
-			['tv-game-jam-4.png', 420, 333, {
+			['tv-game-jam-4.png', 60, 30, {
 				static: .2,
 				count: 10,
 			}],
+			['total-rickall-massacre.png'],
 
 
 			["spring_sprinkle.mp3", 1, loop],
@@ -2986,6 +3059,7 @@ window.characters = characters;
 				actions: [
 					now => {
 						if(Keyboard.action.down) {
+							menuTime = now;
 							if(menuType == 0) {
 								if(customMenu===MENUS[menuType].length-1) {
 									if(characters.hero.bodyColor==='nude') {
@@ -2994,12 +3068,13 @@ window.characters = characters;
 
 
 									Engine.nextScene(now);
-								} else if(customMenu === 0) {
+								} else if(customMenu === 1) {
 									if(!waitUp) {
-										randomHero();
+										randomi++;
+										randomHero(randomi === 0 ? 0 : randomi === 1? initialHero : randomi ^ randomo);									
 										waitUp = true;
 									}
-								} else if(customMenu===1) {
+								} else if(customMenu===0) {
 									if(!waitUp) {
 										entryMode = !entryMode
 										waitUp = true;
@@ -3028,6 +3103,12 @@ window.characters = characters;
 									if(!waitUp) {
 										menuType = 3;
 										customMenu = localStorage.getItem('nudity')==='allow' ? 1 : 0;
+										waitUp = true;
+									}									
+								} else if(customMenu==3) {
+									if(!waitUp) {
+										menuType = 4;
+										customMenu = 0;
 										waitUp = true;
 									}									
 								}
@@ -3070,6 +3151,22 @@ window.characters = characters;
 										waitUp = true;
 									}
 								}								
+							} else if(menuType == 4) {
+								if(customMenu==0) {
+									if(!waitUp) {
+										menuType = 5;
+										customMenu = 0;
+										waitUp = true;
+									}
+								}
+							} else if(menuType == 5) {
+								if(customMenu==0) {
+									if(!waitUp) {
+										menuType = 0;
+										customMenu = 0;
+										waitUp = true;
+									}
+								}
 							}
 
 						} else if(Keyboard.move.dx < 0) {
@@ -3079,6 +3176,10 @@ window.characters = characters;
 									waitUp = true;
 									cursor = Math.max(0, cursor - 1);
 //									console.log(playerName);
+								} else if(customMenu===1) {
+									randomi--;
+										randomHero(randomi === 0 ? 0 : randomi === 1? initialHero : randomi ^ randomo);									
+									waitUp = true;
 								}
 							}
 						} else if(Keyboard.move.dx > 0) {
@@ -3087,6 +3188,10 @@ window.characters = characters;
 								if(entryMode) {
 									waitUp = true;
 									cursor = Math.min(cursor + 1, playerName.length, 12);
+								} else if(customMenu===1) {
+									randomi++;
+									randomHero(randomi === 0 ? 0 : randomi === 1? initialHero : randomi ^ randomo);									
+									waitUp = true;
 								}
 							}
 						} else if(Keyboard.move.dy < 0) {
@@ -3102,6 +3207,7 @@ window.characters = characters;
 									p.splice(cursor, 1, letter);
 									p = p.join("");
 									playerName = p.trim();
+									localStorage.setItem('playerName', playerName);
 								} else {
 									customMenu = Math.max(0, customMenu-1);
 								}
@@ -3120,6 +3226,7 @@ window.characters = characters;
 									p.splice(cursor, 1, letter);
 									p = p.join("");
 									playerName = p.trim();
+									localStorage.setItem('playerName', playerName);
 								} else {
 									customMenu = Math.min(MENUS[menuType].length-1, customMenu+1);
 								}
