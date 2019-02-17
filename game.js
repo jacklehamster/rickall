@@ -13,7 +13,8 @@ const Game = function() {
 	const WORLD_SIZE = [600, 600];//[1000, 1000];
 	const STRING_LIMIT = 29;
 	const LONG_STRING_LIMIT = 42;
-	const NPC_COUNT = 16;//100;
+	const isHardcore = localStorage.getItem('difficulty')==='hard';
+	const NPC_COUNT =  isHardcore ? 16 : 12;//100;
 	const DEFAULT_SPEECH_SPEED = 30;
 	let SPEECH_SPEED = localStorage.getItem('textSpeed')==='fast' ? DEFAULT_SPEECH_SPEED /10 : DEFAULT_SPEECH_SPEED;
 	const loop = 'loop';
@@ -935,9 +936,13 @@ window.characters = characters;
 	}
 
 	function secondScene(now) {
-		Engine.dispatchTrigger({trigger:'best-times', score:"Fastest plays", value:now});
-		Engine.dispatchTrigger({trigger:'most-lLives', score:"Most lives remaining", value:heartCount});
-
+		if(isHardcore) {
+			Engine.dispatchTrigger({trigger:'best-times', score:"Fastest HARDCORE players", value:now});
+			Engine.dispatchTrigger({trigger:'most-lLives', score:"Most lives remaining on HARD", value:heartCount});
+		} else {
+			Engine.dispatchTrigger({trigger:'best-times', score:"Fastest players", value:now});
+			Engine.dispatchTrigger({trigger:'most-lLives', score:"Most lives remaining", value:heartCount});
+		}
 
 		skipOnce = true;
 		Engine.nextScene(now);
@@ -1138,6 +1143,9 @@ window.characters = characters;
 				}
 			}
 			finalEnding = action;
+			if(isHardcore) {
+				Engine.dispatchTrigger({trigger:'hardcore', medal:'Hardcore'});
+			}
 		}
 	}
 
@@ -2201,7 +2209,8 @@ window.characters = characters;
 		['BACK', 122, MENUYSTART],
 		['TEXT SPEED', 122, MENUYSTART + SPACING*1],
 		['NUDITY', 122, MENUYSTART + SPACING*2],
-		['HOW TO PLAY', 122, MENUYSTART + SPACING*3],
+		['DIFFICULTY', 122, MENUYSTART + SPACING*3],
+		['HOW TO PLAY', 122, MENUYSTART + SPACING*4],
 	];
 
 	const TEXT_SPEED_MENU = [
@@ -2222,13 +2231,18 @@ window.characters = characters;
 		['BACK', 122, MENUYSTART],
 	];
 
+	const DIFFICULTY_MENU = [
+		['NORMAL', 122, MENUYSTART],
+		['HARD', 122, MENUYSTART + SPACING*1],
+	];
+
 	let cursor = 0;
 	let playerName = localStorage.getItem('playerName') || '';
 	let entryMode = false;
 	let menuTime = 0;
 
 	let menuType = 0;
-	let MENUS = [CUSTOM_MENU, OPTIONS_MENU, TEXT_SPEED_MENU, NUDITY_MENU, HOW_TO_PLAY_MENU, MORE_HOW_TO_PLAY_MENU];
+	let MENUS = [CUSTOM_MENU, OPTIONS_MENU, TEXT_SPEED_MENU, NUDITY_MENU, HOW_TO_PLAY_MENU, MORE_HOW_TO_PLAY_MENU, DIFFICULTY_MENU];
 
 	function getIntroSprites(now) {
 		sprites.length = 0;
@@ -2285,10 +2299,10 @@ window.characters = characters;
 		}
 
 
-
+		const MENUYSHIFT = menuType===1 ? -10 : 0;
 		// const [ menuX, menuY ] = MENU_SPOTS[customMenu];
 		if(!entryMode) {
-			sprites.push(['pointer', 87 + INITIAL_SHIFT,MENUYSTART - 180 +155+ customMenu * SPACING, { animated: true, frameRate: 20 }]);
+			sprites.push(['pointer', 87 + INITIAL_SHIFT,MENUYSTART - 180 +155+ customMenu * SPACING + MENUYSHIFT, { animated: true, frameRate: 20 }]);
 		}
 		for(let i=0; i<MENUS[menuType].length; i++) {
 			let [ text, x, y ] = MENUS[menuType][i];
@@ -2307,7 +2321,7 @@ window.characters = characters;
 				}
 				text += ': ' + p + "";
 			}
-			sprites.push(['text', x+ INITIAL_SHIFT, y, { text, color}]);
+			sprites.push(['text', x+ INITIAL_SHIFT, y + MENUYSHIFT, { text, color}]);
 		}
 		return sprites;
 	}
@@ -3113,6 +3127,12 @@ window.characters = characters;
 									}									
 								} else if(customMenu==3) {
 									if(!waitUp) {
+										menuType = 6;
+										customMenu = localStorage.getItem('difficulty')==='hard' ? 1 : 0;
+										waitUp = true;
+									}									
+								} else if(customMenu==4) {
+									if(!waitUp) {
 										menuType = 4;
 										customMenu = 0;
 										waitUp = true;
@@ -3121,16 +3141,16 @@ window.characters = characters;
 							} else if(menuType == 2) {
 								if(customMenu==0) {
 									if(!waitUp) {
-										menuType = 0;
-										customMenu = 0;
+										menuType = 1;
+										customMenu = 1;
 										SPEECH_SPEED = DEFAULT_SPEECH_SPEED;
 										localStorage.removeItem('textSpeed');
 										waitUp = true;
 									}									
 								} else if(customMenu==1) {
 									if(!waitUp) {
-										menuType = 0;
-										customMenu = 0;
+										menuType = 1;
+										customMenu = 1;
 										SPEECH_SPEED = DEFAULT_SPEECH_SPEED / 10;
 										localStorage.setItem('textSpeed', 'fast');
 										waitUp = true;
@@ -3139,8 +3159,8 @@ window.characters = characters;
 							} else if(menuType == 3) {
 								if(customMenu==0) {
 									if(!waitUp) {
-										menuType = 0;
-										customMenu = 0;
+										menuType = 1;
+										customMenu = 2;
 										nudity = null;
 										localStorage.removeItem('nudity');
 										if(characters.hero.bodyColor==='nude') {
@@ -3150,8 +3170,8 @@ window.characters = characters;
 									}									
 								} else if(customMenu==1) {
 									if(!waitUp) {
-										menuType = 0;
-										customMenu = 0;
+										menuType = 1;
+										customMenu = 2;
 										nudity = "allow";
 										localStorage.setItem('nudity', 'allow');
 										waitUp = true;
@@ -3168,11 +3188,35 @@ window.characters = characters;
 							} else if(menuType == 5) {
 								if(customMenu==0) {
 									if(!waitUp) {
-										menuType = 0;
-										customMenu = 0;
+										menuType = 1;
+										customMenu = 4;
 										waitUp = true;
 									}
 								}
+							} else if(menuType == 6) {
+								if(customMenu==0) {
+									if(!waitUp) {
+										menuType = 1;
+										customMenu = 3;
+										if(localStorage.getItem('difficulty')=='hard') {
+											// NPC_COUNT = 12;
+											localStorage.removeItem('difficulty');
+											location.reload();
+										}
+										waitUp = true;
+									}									
+								} else if(customMenu==1) {
+									if(!waitUp) {
+										menuType = 1;
+										customMenu = 3;
+										if(localStorage.getItem('difficulty')!='hard') {
+											// NPC_COUNT = 16;
+											localStorage.setItem('difficulty', 'hard');
+											location.reload();
+										}
+										waitUp = true;
+									}
+								}		
 							}
 
 						} else if(Keyboard.move.dx < 0) {
