@@ -2239,12 +2239,12 @@ window.characters = characters;
 				wrapTextWithLimit("This game is based on Rick and Morty's episode 4 of season 2. It may " +
 					"contain spoilers. " +
 					"Parasites have infiltrated your home, and mixed themselves among " +
-					"your family and friends. They also implanted memories and themselves " +
-					"in everyone's brain. As a result, you can't tell who you used to know " +
-					"and who is just a pigment of fake memories. To uncover their real identity, " +
+					"your family and friends. They also implanted memories of themselves " +
+					"in everyone's brain. As a result, you can't tell who's real and who's not. " +
+					"To uncover their real identity, " +
 					"you must discuss with each person and find out if they are parasite. There " +
 					"must be a way to tell them apart. (Of course, if you've watched the Rick and Morty "+
-					"episode this is based on, you already know the answer)."
+					"episode this is based on, you already know the answer!)."
 				, 42), 
 				color: '#ddddee', 
 				speechSpeed: 1, 
