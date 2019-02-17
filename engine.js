@@ -850,8 +850,8 @@ const Engine = function(document, Game) {
 	}
 
 	function dispatchTrigger(action) {
-		if(!triggered[action.trigger]) {
-			if(triggers[action.trigger]) {
+		if(!action.trigger || !triggered[action.trigger]) {
+			if(action.trigger && triggers[action.trigger]) {
 				triggers[action.trigger].forEach(callback => {
 					callback(action);
 				});
@@ -860,7 +860,9 @@ const Engine = function(document, Game) {
 				console.log(action);
 				callback(action);
 			});
-			triggered[action.trigger] = true;
+			if(action.trigger) {
+				triggered[action.trigger] = true;
+			}
 		}
 	}	
 

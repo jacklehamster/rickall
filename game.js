@@ -14,7 +14,8 @@ const Game = function() {
 	const STRING_LIMIT = 29;
 	const LONG_STRING_LIMIT = 42;
 	const isHardcore = localStorage.getItem('difficulty')==='hard';
-	const NPC_COUNT =  isHardcore ? 16 : 12;//100;
+	const isCustomDifficulty = localStorage.getItem('difficulty') && !isHardcore;
+	const NPC_COUNT =  !localStorage.getItem('difficulty') ? 12 : isHardcore ? 16 : parseInt(localStorage.getItem('difficulty'));//100;
 	const DEFAULT_SPEECH_SPEED = 30;
 	let SPEECH_SPEED = localStorage.getItem('textSpeed')==='fast' ? DEFAULT_SPEECH_SPEED /10 : DEFAULT_SPEECH_SPEED;
 	const loop = 'loop';
@@ -490,7 +491,7 @@ window.characters = characters;
 	};
 
 	function npcHusband(index) {
-		return index === 1;
+		return index === 0;
 	}
 
 	function husbandIntro(gender) {
@@ -702,6 +703,9 @@ window.characters = characters;
 	function canExit() {
 		if (DEBUG.canExit) {
 			return true;
+		}
+		if(isCustomDifficulty) {
+			return false;
 		}
 		return garyHidden && (inHallway || parasiteCount===0);
 	}
@@ -1627,6 +1631,7 @@ window.characters = characters;
 		const SHOOTING_AREA_X = 10;
 		const SHOOTING_AREA_Y = 20;
 		let shotNpc = null;
+		let countParasiteDown = 0;
 
 
 		parasites.forEach(parasite => {
@@ -1863,6 +1868,10 @@ window.characters = characters;
 					if(npc.parasite) {
 						Engine.playSound('parasite_die');
 						parasiteCount--;
+						countParasiteDown++;
+						if(isCustomDifficulty) {
+							Engine.dispatchTrigger({score:"Most parasites killed in custom mode", value:countParasiteDown});
+						}
 						// console.log(totalParasiteCount - parasiteCount);
 						for(let i=0; i < totalParasiteCount - parasiteCount; i++) {
 							let dx = Math.random()-.5, dy = Math.random()-.5;
@@ -2234,6 +2243,7 @@ window.characters = characters;
 	const DIFFICULTY_MENU = [
 		['NORMAL', 122, MENUYSTART],
 		['HARD', 122, MENUYSTART + SPACING*1],
+		['CUSTOM', 122, MENUYSTART + SPACING*2],
 	];
 
 	let cursor = 0;
@@ -2298,6 +2308,10 @@ window.characters = characters;
 			return sprites;
 		}
 
+		if(isCustomDifficulty && ngio.user && ngio.user.id) {
+			sprites.push(['text', 60, 257, {text:"Final ending not available in custom mode", color:'#992222', fontSize: 11 }]);			
+		}
+
 
 		const MENUYSHIFT = menuType===1 ? -10 : 0;
 		// const [ menuX, menuY ] = MENU_SPOTS[customMenu];
@@ -2321,12 +2335,19 @@ window.characters = characters;
 				}
 				text += ': ' + p + "";
 			}
+			if(menuType===6 && i===2 && customMenu===2) {
+				let count = !localStorage.getItem('difficulty') ? 12 : localStorage.getItem('difficulty') === 'hard' ? 16 
+					: localStorage.getItem('difficulty');
+				text += ': ' + count  + ' PEOPLE';
+			}
 			sprites.push(['text', x+ INITIAL_SHIFT, y + MENUYSHIFT, { text, color}]);
 		}
 		return sprites;
 	}
-	let tv = 1;
 
+
+
+	let tv = 1;
 	let lost = DEBUG.lost;
 	const sprites = [];
 	function getSprites(now) {
@@ -3128,7 +3149,8 @@ window.characters = characters;
 								} else if(customMenu==3) {
 									if(!waitUp) {
 										menuType = 6;
-										customMenu = localStorage.getItem('difficulty')==='hard' ? 1 : 0;
+										customMenu = localStorage.getItem('difficulty')==='hard' ? 1 
+											: !localStorage.getItem('difficulty') ? 0 : 2;
 										waitUp = true;
 									}									
 								} else if(customMenu==4) {
@@ -3198,7 +3220,7 @@ window.characters = characters;
 									if(!waitUp) {
 										menuType = 1;
 										customMenu = 3;
-										if(localStorage.getItem('difficulty')=='hard') {
+										if(NPC_COUNT!==12) {
 											// NPC_COUNT = 12;
 											localStorage.removeItem('difficulty');
 											location.reload();
@@ -3209,14 +3231,25 @@ window.characters = characters;
 									if(!waitUp) {
 										menuType = 1;
 										customMenu = 3;
-										if(localStorage.getItem('difficulty')!='hard') {
+										if(NPC_COUNT!==16) {
 											// NPC_COUNT = 16;
 											localStorage.setItem('difficulty', 'hard');
 											location.reload();
 										}
 										waitUp = true;
 									}
-								}		
+								} else if(menuType===6 && customMenu===2) {
+									if(!waitUp) {
+										menuType = 1;
+										customMenu = 3;
+										const count = !localStorage.getItem('difficulty') ? 12 : localStorage.getItem('difficulty')==='hard' ? 16 
+											: parseInt(localStorage.getItem('difficulty'));
+										if(NPC_COUNT !== count) {											
+											location.reload();
+										}
+										waitUp = true;
+									}
+								}
 							}
 
 						} else if(Keyboard.move.dx < 0) {
@@ -3226,9 +3259,14 @@ window.characters = characters;
 									waitUp = true;
 									cursor = Math.max(0, cursor - 1);
 //									console.log(playerName);
-								} else if(customMenu===1) {
+								} else if(menuType===0 && customMenu===1) {
 									randomi--;
 										randomHero(randomi === 0 ? 0 : randomi === 1? initialHero : randomi ^ randomo);									
+									waitUp = true;
+								} else if(menuType===6 && customMenu===2) {
+									const count = !localStorage.getItem('difficulty') ? 12 : localStorage.getItem('difficulty')==='hard' ? 16 
+										: parseInt(localStorage.getItem('difficulty'));
+									localStorage.setItem('difficulty', Math.max(0, count-1));
 									waitUp = true;
 								}
 							}
@@ -3238,9 +3276,14 @@ window.characters = characters;
 								if(entryMode) {
 									waitUp = true;
 									cursor = Math.min(cursor + 1, playerName.length, 12);
-								} else if(customMenu===1) {
+								} else if(menuType===0 && customMenu===1) {
 									randomi++;
 									randomHero(randomi === 0 ? 0 : randomi === 1? initialHero : randomi ^ randomo);									
+									waitUp = true;
+								} else if(menuType===6 && customMenu===2) {
+									const count = !localStorage.getItem('difficulty') ? 12 : localStorage.getItem('difficulty')==='hard' ? 16 
+										: parseInt(localStorage.getItem('difficulty'));
+									localStorage.setItem('difficulty', Math.max(0, count+1));
 									waitUp = true;
 								}
 							}
