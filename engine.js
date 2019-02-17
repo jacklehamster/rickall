@@ -833,6 +833,37 @@ const Engine = function(document, Game) {
 
 	document.addEventListener("DOMContentLoaded", init);
 
+	let triggered = {};
+	const triggers = {};
+	const triggersOnAll = [];
+	function onTrigger(trigger, callback) {
+		if(typeof(trigger)==='function') {
+			triggersOnAll.push(trigger);
+		} else {
+			if(!triggers[trigger]) {
+				triggers[trigger] = [];
+			}
+			triggers[trigger].push(callback);
+		}
+	}
+
+	function dispatchTrigger(action) {
+		if(!triggered[action.trigger]) {
+			if(triggers[action.trigger]) {
+				triggers[action.trigger].forEach(callback => {
+					callback(action);
+				});
+			}
+			triggersOnAll.forEach(callback => {
+				console.log(action);
+				callback(action);
+			});
+			triggered[action.trigger] = true;
+		}
+	}	
+
+
+
 	return {
 		setCanvas,
 		setDebug,
@@ -844,5 +875,7 @@ const Engine = function(document, Game) {
 		previousScene,
 		getScene,
 		loadInfo,
+		onTrigger,
+		dispatchTrigger,
 	};
 }(document, Game);

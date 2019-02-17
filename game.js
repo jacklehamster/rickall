@@ -15,13 +15,14 @@ const Game = function() {
 	const LONG_STRING_LIMIT = 45;
 	const NPC_COUNT = 16;//100;
 	const DEFAULT_SPEECH_SPEED = 30;
-	let SPEECH_SPEED = DEFAULT_SPEECH_SPEED;
+	let SPEECH_SPEED = localStorage.getItem('textSpeed')==='fast' ? DEFAULT_SPEECH_SPEED /10 : DEFAULT_SPEECH_SPEED;
 	const loop = 'loop';
 	const IMMUNE_TIME = 5000;
 
 	const RANDOM_LEFT = ['rick', 'san', 'mor', 'smith', 'beth', 'jer', 'sum', 'har', 'jes', 'va', 'gol', 'fera', 'brad', 'et', 'nan', 'to', 'tri', 'vin', 'phil', 'seth', 'mee', 'bird', 'squan', 'uni', 'poo', 'butt'];
 	const RANDOM_RIGHT = ['', 'cent', 'lip', 'chez', 'ty', 'ry', 'mer', 'ry', 'sica', 'gina', 'denfold', 'tu', 'han', 'cy', 'by', 'cia', 'seeks', 'person', 'chy', 'ty', 'py', 'hole', 'wubbalubbadubdub'];
 
+	let nudity = localStorage.getItem('nudity')==='allow' ? 'allow' : null;
 
 	// const RANDOM_SYLLABLES = [
 	// 	'jo', 'ja', 'ne', 'ka', 'vi', 'dof', 'lin', 'chu', 'rat', 'be', 'do', 'nald', 'tay', 'lor', 
@@ -309,6 +310,7 @@ const Game = function() {
 		},
 	};
 
+window.characters = characters;
 	const GENDERS = ['penis', 'vagina'];
 	const switchers = ['hair', 'hairColor', 'head', 'face', 'skinColor', 'bodyColor', 'beard', 'gender'];
 
@@ -350,7 +352,10 @@ const Game = function() {
 				break;
 			case 'bodyColor':
 				{
-					const list = BODY_COLORS.map(a => a.name);
+					let list = BODY_COLORS.map(a => a.name);
+					if(!nudity) {
+						list = list.filter(name => name!=='nude');
+					}
 					value = list[(index+list.length) % list.length];
 					characters.hero[element] = value;
 					characters.gun[element] = value;
@@ -503,6 +508,7 @@ const Game = function() {
 	let parasiteCount = 0;
 	let ppCount = 0;
 	let npcCount = 0;
+	let npcShotCount = 0;
 
 	const walls = {}, surface = {}, npcWalls = {};
 
@@ -650,7 +656,7 @@ const Game = function() {
 				hairColor: hairColor.name,
 				textColor: '#' + (faceColor[0xFFFFFF] + 0xF000000).toString(16).substr(1),
 				outline: faceColor.outline || '#222222',
-				bodyColor: husband ? 'gary' : index>=NPC_COUNT * .9 ? NUDE.name : getRandom(BODY_COLORS.slice(0, BODY_COLORS.length - 2)).name,
+				bodyColor: husband ? 'gary' : index>=NPC_COUNT * .9 && nudity==='allow' ? NUDE.name : getRandom(BODY_COLORS.slice(0, BODY_COLORS.length - 2)).name,
 				x, 
 				y,
 				move,
@@ -739,7 +745,7 @@ const Game = function() {
 		y: 0,
 		dx: 0,
 		dy: 0,
-		size: [0, 0],
+		size: 1000,
 		target: null,
 	};
 
@@ -770,6 +776,7 @@ const Game = function() {
 		inFinalFinal = true;
 		talking = 0;
 		npcToTalk.talking = 0;
+		chatIndex = 0;
 //		hero.talking = now;
 //		talking = true;
 //		console.log('finalScene');
@@ -1097,8 +1104,14 @@ const Game = function() {
 				// 	particles.push([lastShot.x, lastShot.y, (Math.random() -.5) * 3 + lastShot.dx, (Math.random()-.5) * 2 + lastShot.dy]);
 				// }
 				gameOver = now;
+				Engine.dispatchTrigger({trigger:'unforgivable', medal:'Unforgivable'});
+
 			} else if(action==='LEAVE') {
 				gameOver = now;
+				Engine.dispatchTrigger({trigger:'forgiven', medal:'Forgiven'});
+				if (npcShotCount === 0) {
+					Engine.dispatchTrigger({trigger:'survivor', medal:'No casualty'});					
+				}
 			}
 			finalEnding = action;
 		}
@@ -1528,6 +1541,9 @@ const Game = function() {
 						if(Math.round(hero.x/32) >= 14 && Math.round(hero.x/32) <= 15 && Math.round(hero.y/32)===3
 							&& hero.face.dy < 0 && hero.face.dx===0) {
 							tv = tv%4 + 1;
+							if(tv===4) {
+								Engine.dispatchTrigger({trigger:'tv', medal:'Channel Zombie'});
+							}
 						}
 					}
 				}
@@ -1797,12 +1813,13 @@ const Game = function() {
 					npc.shot = now;
 					if(!npc.parasite) {
 						if(heartCount<= 0) {
-							console.log('here');
+							//console.log('here');
 							lost = now;
 //							timeFreeze = true;
 						}
 						heartCount--;
 						npcCount --;
+						npcShotCount ++;
 						Engine.playSound('hit');
 					}
 					lastShot.target = npc;
@@ -2016,7 +2033,8 @@ const Game = function() {
 
 		let head = [headSprite, OFFSET_X, OFFSET_Y +-26, {animated: !DEBUG.freezeBody && !lost && moveDist, color: skinColor, flip: npc.husband ? faceDx>0 : false }];
 
-
+		// if(npc===hero)
+		// 	console.log(dx, dy);
 		if (!dx) {
 			if (dy < 0) {
 				body = [character['body-up'], OFFSET_X, OFFSET_Y, {animated:  !DEBUG.freezeBody && !lost &&moveDist, color: comboColor }];
@@ -2029,7 +2047,7 @@ const Game = function() {
 			if (dx < 0) {
 				body = [character['body-left'], OFFSET_X, OFFSET_Y, {animated:  !DEBUG.freezeBody && !lost &&moveDist, color: comboColor }];
 			} else {
-				body = [character['body-right'], OFFSET_X, OFFSET_Y, {animated: !DEBUG.freezeBody &&  !lost &&moveDist, flip: !npc.gun && dx>0, color: comboColor, }];
+				body = [character['body-right'], OFFSET_X, OFFSET_Y, {animated: !DEBUG.freezeBody &&  !lost &&moveDist, flip: !showGun() && dx>0, color: comboColor, }];
 			}
 		}
 
@@ -2156,6 +2174,7 @@ const Game = function() {
 	const OPTIONS_MENU = [
 		['BACK', 122, 180],
 		['TEXT SPEED', 122, 200],
+		['NUDITY', 122, 220],
 	];
 
 	const TEXT_SPEED_MENU = [
@@ -2163,12 +2182,17 @@ const Game = function() {
 		['FAST', 122, 200]
 	];
 
+	const NUDITY_MENU = [
+		['NO NUDITY', 122, 180],
+		['ALLOW NUDITY', 122, 200],
+	];
+
 	let cursor = 0;
 	let playerName = '';
 	let entryMode = false;
 
 	let menuType = 0;
-	let MENUS = [CUSTOM_MENU, OPTIONS_MENU, TEXT_SPEED_MENU];
+	let MENUS = [CUSTOM_MENU, OPTIONS_MENU, TEXT_SPEED_MENU, NUDITY_MENU];
 
 	function getIntroSprites(now) {
 		sprites.length = 0;
@@ -2231,6 +2255,7 @@ const Game = function() {
 			const heroSprite = stopShoot ? 'hero' : shooting(now) ? 'gunshooting' : showGun() ? 'gun' : 'hero';
 			const heroDx = finalEnding==='SHOOT' ? 1 : hero.face.dx;
 			const heroDy = hero.face.dy;
+			//console.log(heroDx, heroDy);
 			// const heroDx = hero.gun ? hero.face.dx : hero.move.dx;
 			// const heroDy = hero.gun ? hero.face.dy : hero.move.dy;
 			if(!hero.lastHit || now - hero.lastHit > IMMUNE_TIME || Math.floor(now / 40) % 3 !==0) {
@@ -2323,6 +2348,7 @@ const Game = function() {
 		/////////////////
 		if(!inHallway) {
 			sprites.push(['tv-game-jam-'+tv, scroll.x + 434, scroll.y + 10, {size:[60,30], animated: true, frameRate: 60}]);
+			// sprites.push(['gun', scroll.x + 980, scroll.y + 20, {}]);
 		}
 
 		if (hero.gun && (!inFinal && !inHallway || finalChat == FINALCHATS.length)) {
@@ -2346,7 +2372,6 @@ const Game = function() {
 					sprites.push(['heart', settings.size[0] - 20 * (i+ 1), 7, { zOrder: 3 }]);			
 				}
 			}
-
 			if(shooting(now) && lastShot && lastShot.size > 0) {
 				sprites.push(makeBullet(lastShot, scroll, lastShot.target));
 			}
@@ -2384,7 +2409,9 @@ const Game = function() {
 				'\n'+
 				'          RICK and MORTY\n'+
 				'\n'+
-				'          Episode: Total Rickall\n'+
+				'        Season 2, Episode 4\n'+
+				'\n'+
+				'          Total Rickall\n'+
 				'\n'+
 				'\n'+
 				'\n'+
@@ -2430,7 +2457,12 @@ const Game = function() {
 				'\n'+
 				'\n'+
 				'\n'+
-				'                        You\'re still here! \n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'             You are still here! \n'+
 				'\n'+
 				'\n'+
 				'\n'+
@@ -2445,26 +2477,12 @@ const Game = function() {
 				'\n'+
 				'\n'+
 				'\n'+
-				'                    Nice scenery isn\'t it?! \n'+
 				'\n'+
 				'\n'+
 				'\n'+
 				'\n'+
 				'\n'+
-				'\n'+
-				'\n'+
-				'\n'+
-				'\n'+
-				'\n'+
-				'\n'+
-				'\n'+
-				'\n'+
-				'\n'+
-				'                    Why don\'t you go home? \n'+
-				'\n'+
-				'\n'+
-				'\n'+
-				'\n'+
+				'         Nice scenery isn\'t it?! \n'+
 				'\n'+
 				'\n'+
 				'\n'+
@@ -2487,7 +2505,41 @@ const Game = function() {
 				'\n'+
 				'\n'+
 				'\n'+
-				"        Trust me, there's nothing left to read.\n"+
+				'\n'+
+				'\n'+
+				'       Why don\'t you go home? \n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				'\n'+
+				" Trust me there's nothing left to read.\n"+
 				""
 
 				,
@@ -2567,7 +2619,7 @@ const Game = function() {
 	];
 
 	function showGun() {
-		return hero.gun || talking && chatIndex===3;
+		return hero.gun || (talking && chatIndex===3 && !inFinalFinal);
 	}
 
 	const particles = [
@@ -2936,6 +2988,11 @@ const Game = function() {
 						if(Keyboard.action.down) {
 							if(menuType == 0) {
 								if(customMenu===MENUS[menuType].length-1) {
+									if(characters.hero.bodyColor==='nude') {
+										Engine.dispatchTrigger({trigger:'nude', medal:'Nude player'});
+									}
+
+
 									Engine.nextScene(now);
 								} else if(customMenu === 0) {
 									if(!waitUp) {
@@ -2964,9 +3021,15 @@ const Game = function() {
 								} else if(customMenu==1) {
 									if(!waitUp) {
 										menuType = 2;
-										customMenu = 0;
+										customMenu = localStorage.getItem('textSpeed')==='fast' ? 1 : 0;
 										waitUp = true;
 									}
+								} else if(customMenu==2) {
+									if(!waitUp) {
+										menuType = 3;
+										customMenu = localStorage.getItem('nudity')==='allow' ? 1 : 0;
+										waitUp = true;
+									}									
 								}
 							} else if(menuType == 2) {
 								if(customMenu==0) {
@@ -2974,6 +3037,7 @@ const Game = function() {
 										menuType = 0;
 										customMenu = 0;
 										SPEECH_SPEED = DEFAULT_SPEECH_SPEED;
+										localStorage.removeItem('textSpeed');
 										waitUp = true;
 									}									
 								} else if(customMenu==1) {
@@ -2981,6 +3045,28 @@ const Game = function() {
 										menuType = 0;
 										customMenu = 0;
 										SPEECH_SPEED = DEFAULT_SPEECH_SPEED / 10;
+										localStorage.setItem('textSpeed', 'fast');
+										waitUp = true;
+									}
+								}								
+							} else if(menuType == 3) {
+								if(customMenu==0) {
+									if(!waitUp) {
+										menuType = 0;
+										customMenu = 0;
+										nudity = null;
+										localStorage.removeItem('nudity');
+										if(characters.hero.bodyColor==='nude') {
+											changeHero('bodyColor', 0);
+										}
+										waitUp = true;
+									}									
+								} else if(customMenu==1) {
+									if(!waitUp) {
+										menuType = 0;
+										customMenu = 0;
+										nudity = "allow";
+										localStorage.setItem('nudity', 'allow');
 										waitUp = true;
 									}
 								}								
