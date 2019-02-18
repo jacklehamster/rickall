@@ -13,9 +13,16 @@ const Game = function() {
 	const WORLD_SIZE = [600, 600];//[1000, 1000];
 	const STRING_LIMIT = 29;
 	const LONG_STRING_LIMIT = 42;
-	const isHardcore = localStorage.getItem('difficulty')==='hard';
-	const isCustomDifficulty = localStorage.getItem('difficulty') && !isHardcore;
-	const NPC_COUNT =  !localStorage.getItem('difficulty') ? 12 : isHardcore ? 16 : parseInt(localStorage.getItem('difficulty'));//100;
+	let isHardcore = localStorage.getItem('difficulty')==='hard';
+	let isCustomDifficulty = localStorage.getItem('difficulty') && !isHardcore;
+	let NPC_COUNT;//100;
+	function updateNpcCount() {
+		isHardcore = localStorage.getItem('difficulty')==='hard';
+		isCustomDifficulty = localStorage.getItem('difficulty') && !isHardcore;
+		NPC_COUNT =  !localStorage.getItem('difficulty') ? 12 : isHardcore ? 16 : parseInt(localStorage.getItem('difficulty'));
+	}
+	updateNpcCount();
+
 	const DEFAULT_SPEECH_SPEED = 30;
 	let SPEECH_SPEED = localStorage.getItem('textSpeed')==='fast' ? DEFAULT_SPEECH_SPEED /10 : DEFAULT_SPEECH_SPEED;
 	const loop = 'loop';
@@ -638,66 +645,79 @@ window.characters = characters;
 	tiles.push({ type: 'house-background', x: ['back.x'], y: ['back.y'], alwaysOnScreen: true });
 	tiles.push({ type: 'couch', x: ['couch.x'], y: ['couch.y'], alwaysOnScreen: true });
 
-
-	let npcs = new Array(NPC_COUNT).fill(null).map(
-		(a, index) => {
-			const move = {
-				dx: Math.round(2*(Math.random()-.5)),
-				dy: Math.round(2*(Math.random()-.5)),
-			};
-			const husband = npcHusband(index);
-			const parasite = !husband && index < NPC_COUNT / 3;
-			if (parasite) {
-				parasiteCount++;
-			}
-			const gender = husband || Math.random() < .5 ? 'penis' : 'vagina';
-			const faceColor = husband ? FACE_COLORS.filter(a => a.name==="pink")[0] : getRandom(FACE_COLORS);
-			const hairColor = getRandom(HAIR_COLORS);
-			const name = makeCap(
-				RANDOM_LEFT[(randomMess + index+12345)%RANDOM_LEFT.length]
-				+ RANDOM_RIGHT[(randomMess + index)%RANDOM_RIGHT.length]);
-			const occupation = OCCUPATIONS[(randomMess + index+323)%OCCUPATIONS.length];
-
-			const posIndex = Math.floor(Math.random() * freeSpaces.length);
-			const {x, y} = freeSpaces[posIndex];
-			freeSpaces[posIndex] = freeSpaces[freeSpaces.length-1];
-			freeSpaces.pop();
-			if(!parasite) {
-				npcCount++;
-			}
-			const beard = husband ? null : getRandom(BEARDS);
-			const hair = husband ? 'bald' : getRandom(HAIRS);
-
-			return { 
-				id: index,
-				name,
-				occupation,
-				head: husband ? 'gary-head' : getRandom(HEADS),
-				skinColor: faceColor.name,
-				hairColor: hairColor.name,
-				textColor: '#' + (faceColor[0xFFFFFF] + 0xF000000).toString(16).substr(1),
-				outline: faceColor.outline || '#222222',
-				bodyColor: husband ? 'gary' : index>=NPC_COUNT * .9 && nudity==='allow' ? NUDE.name : getRandom(BODY_COLORS.slice(0, BODY_COLORS.length - 2)).name,
-				x, 
-				y,
-				move,
-				face: move,
-				lookAtHero: { dx: 0, dy: 0},
-				type: husband ? 'gary' : getRandom(['npc', 'pixie', 'mad', 'smart', 'femme', 'morty']),
-				gender,
-				introduction: husband ? husbandIntro(gender) : wrapText(randomIntroduction(index + randomMess, name, occupation)),
-				memory: wrapTextWithLimit(husband ? husbandMemory(gender) : randomMemory(index + randomMess, parasite, name, gender), LONG_STRING_LIMIT),
-				blocked: 0,
-				husband,
-				parasite,
-				beard,
-				hair,
-			};
-		}
-	);
-	let totalParasiteCount = parasiteCount;
+	let npcs;
+	let totalParasiteCount;
 	let heartCount = 4;
-	console.log(totalParasiteCount);
+
+	function gameStarts(allNude) {
+		if(characters.hero.bodyColor==='nude') {
+			Engine.dispatchTrigger({trigger:'nude', medal:'Nude player'});
+		}
+
+		if(allNude) {
+			Engine.dispatchTrigger({trigger:'all-nude', medal:'69'});			
+		}
+
+		parasiteCount = 0;
+		npcs = new Array(NPC_COUNT).fill(null).map(
+			(a, index) => {
+				const move = {
+					dx: Math.round(2*(Math.random()-.5)),
+					dy: Math.round(2*(Math.random()-.5)),
+				};
+				const husband = npcHusband(index);
+				const parasite = !husband && index < NPC_COUNT / 3;
+				if (parasite) {
+					parasiteCount++;
+				}
+				const gender = husband || Math.random() < .5 ? 'penis' : 'vagina';
+				const faceColor = husband ? FACE_COLORS.filter(a => a.name==="pink")[0] : getRandom(FACE_COLORS);
+				const hairColor = getRandom(HAIR_COLORS);
+				const name = makeCap(
+					RANDOM_LEFT[(randomMess + index+12345)%RANDOM_LEFT.length]
+					+ RANDOM_RIGHT[(randomMess + index)%RANDOM_RIGHT.length]);
+				const occupation = OCCUPATIONS[(randomMess + index+323)%OCCUPATIONS.length];
+
+				const posIndex = Math.floor(Math.random() * freeSpaces.length);
+				const {x, y} = freeSpaces[posIndex];
+				freeSpaces[posIndex] = freeSpaces[freeSpaces.length-1];
+				freeSpaces.pop();
+				if(!parasite) {
+					npcCount++;
+				}
+				const beard = husband ? null : getRandom(BEARDS);
+				const hair = husband ? 'bald' : getRandom(HAIRS);
+
+				return { 
+					id: index,
+					name,
+					occupation,
+					head: husband ? 'gary-head' : getRandom(HEADS),
+					skinColor: faceColor.name,
+					hairColor: hairColor.name,
+					textColor: '#' + (faceColor[0xFFFFFF] + 0xF000000).toString(16).substr(1),
+					outline: faceColor.outline || '#222222',
+					bodyColor: allNude && nudity==='allow' ? 'nude' : husband ? 'gary' : (index>=NPC_COUNT * .9 || allNude) && nudity==='allow' ? NUDE.name : getRandom(BODY_COLORS.slice(0, BODY_COLORS.length - 2)).name,
+					x, 
+					y,
+					move,
+					face: move,
+					lookAtHero: { dx: 0, dy: 0},
+					type: husband ? 'gary' : getRandom(['npc', 'pixie', 'mad', 'smart', 'femme', 'morty']),
+					gender,
+					introduction: husband ? husbandIntro(gender) : wrapText(randomIntroduction(index + randomMess, name, occupation)),
+					memory: wrapTextWithLimit(husband ? husbandMemory(gender) : randomMemory(index + randomMess, parasite, name, gender), LONG_STRING_LIMIT),
+					blocked: 0,
+					husband,
+					parasite,
+					beard,
+					hair,
+				};
+			}
+		);
+		totalParasiteCount = parasiteCount;		
+		console.log(totalParasiteCount);		
+	}
 
 
 	function canExit() {
@@ -1141,7 +1161,7 @@ window.characters = characters;
 
 			} else if(action==='LEAVE') {
 				gameOver = now;
-				Engine.dispatchTrigger({trigger:'forgiven', medal:'Forgiven'});
+				Engine.dispatchTrigger({trigger:'forgiven', medal:'Happy Ending?'});
 				if (npcShotCount === 0) {
 					Engine.dispatchTrigger({trigger:'survivor', medal:'No casualty'});					
 				}
@@ -3103,11 +3123,7 @@ window.characters = characters;
 							menuTime = now;
 							if(menuType == 0) {
 								if(customMenu===MENUS[menuType].length-1) {
-									if(characters.hero.bodyColor==='nude') {
-										Engine.dispatchTrigger({trigger:'nude', medal:'Nude player'});
-									}
-
-
+									gameStarts(localStorage.getItem('nudity')==='allow' && NPC_COUNT === 69 && characters.hero.bodyColor==='nude');
 									Engine.nextScene(now);
 								} else if(customMenu === 1) {
 									if(!waitUp) {
@@ -3220,33 +3236,37 @@ window.characters = characters;
 									if(!waitUp) {
 										menuType = 1;
 										customMenu = 3;
-										if(NPC_COUNT!==12) {
+										// if(NPC_COUNT!==12) {
 											// NPC_COUNT = 12;
 											localStorage.removeItem('difficulty');
-											location.reload();
-										}
+											updateNpcCount();
+//											location.reload();
+										// }
 										waitUp = true;
 									}									
 								} else if(customMenu==1) {
 									if(!waitUp) {
 										menuType = 1;
 										customMenu = 3;
-										if(NPC_COUNT!==16) {
+										// if(NPC_COUNT!==16) {
 											// NPC_COUNT = 16;
 											localStorage.setItem('difficulty', 'hard');
-											location.reload();
-										}
+											updateNpcCount();
+//											location.reload();
+										// }
 										waitUp = true;
 									}
-								} else if(menuType===6 && customMenu===2) {
+								} else if(customMenu===2) {
 									if(!waitUp) {
 										menuType = 1;
 										customMenu = 3;
 										const count = !localStorage.getItem('difficulty') ? 12 : localStorage.getItem('difficulty')==='hard' ? 16 
 											: parseInt(localStorage.getItem('difficulty'));
-										if(NPC_COUNT !== count) {											
-											location.reload();
-										}
+										localStorage.setItem('difficulty', count);
+										// if(NPC_COUNT !== count) {											
+											// location.reload();
+											updateNpcCount();
+										// }
 										waitUp = true;
 									}
 								}
